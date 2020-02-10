@@ -406,11 +406,11 @@ void * listen(void * pData)
 				}
 				else if(command_type == GETLIST) //Handle GetList Command
 				{
-					if(findServer(strIPAddress, nPort) == g_serverList.end())
+					/*if(findServer(strIPAddress, nPort) == g_serverList.end())
 					{
 						strReturn = "Your server did not register to registry-server.";
 					}
-					else
+					else*/
 					{
 						strReturn = getServerList(rpc_format);
 		
