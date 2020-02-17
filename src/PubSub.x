@@ -1,14 +1,3 @@
 
 
-
-program PubSub {
-	version VERSION {
-		int join(string IP, int Port) = 1;
-		int leave(string IP, int Port) = 2;
-		int subscribe(string IP, int Port, string Article) = 3;
-		int unsubscribe(string IP, int Port, string Article) = 4;
-		int publish(string IP, int Port, string Article) = 5;
-		int ping() = 6;
-	} = 1;
-
-}=0x20406080;
+program COMMUNICATE_PROG {	version COMMUNICATE_VERSION {		bool Join (string IP, int Port) = 1;		bool Leave (string IP, int Port) = 2;		bool Subscribe(string IP, int Port, string Article) = 3;		bool Unsubscribe (string IP, int Port, string Article) = 4;		bool Publish (string Article, string IP, int Port) = 5;		bool Ping () = 6;	} = 1;} = 0x20406080;

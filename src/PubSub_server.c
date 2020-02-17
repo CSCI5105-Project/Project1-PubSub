@@ -6,99 +6,74 @@
 
 #include "PubSub.h"
 
-int *
-join_1(IP, Port, rqstp)
-	char *IP;
-	int Port;
-	struct svc_req *rqstp;
+bool_t *
+join_1_svc(char *IP, int Port,  struct svc_req *rqstp)
 {
-
-	static int  result;
+	static bool_t  result;
 
 	/*
 	 * insert server code here
 	 */
 
-	return(&result);
+	return &result;
 }
 
-int *
-leave_1(IP, Port, rqstp)
-	char *IP;
-	int Port;
-	struct svc_req *rqstp;
+bool_t *
+leave_1_svc(char *IP, int Port,  struct svc_req *rqstp)
 {
-
-	static int  result;
+	static bool_t  result;
 
 	/*
 	 * insert server code here
 	 */
 
-	return(&result);
+	return &result;
 }
 
-int *
-subscribe_1(IP, Port, Article, rqstp)
-	char *IP;
-	int Port;
-	char *Article;
-	struct svc_req *rqstp;
+bool_t *
+subscribe_1_svc(char *IP, int Port, char *Article,  struct svc_req *rqstp)
 {
-
-	static int  result;
+	static bool_t  result;
 
 	/*
 	 * insert server code here
 	 */
 
-	return(&result);
+	return &result;
 }
 
-int *
-unsubscribe_1(IP, Port, Article, rqstp)
-	char *IP;
-	int Port;
-	char *Article;
-	struct svc_req *rqstp;
+bool_t *
+unsubscribe_1_svc(char *IP, int Port, char *Article,  struct svc_req *rqstp)
 {
-
-	static int  result;
+	static bool_t  result;
 
 	/*
 	 * insert server code here
 	 */
 
-	return(&result);
+	return &result;
 }
 
-int *
-publish_1(IP, Port, Article, rqstp)
-	char *IP;
-	int Port;
-	char *Article;
-	struct svc_req *rqstp;
+bool_t *
+publish_1_svc(char *Article, char *IP, int Port,  struct svc_req *rqstp)
 {
-
-	static int  result;
+	static bool_t  result;
 
 	/*
 	 * insert server code here
 	 */
 
-	return(&result);
+	return &result;
 }
 
-int *
-ping_1(rqstp)
-	struct svc_req *rqstp;
+bool_t *
+ping_1_svc(struct svc_req *rqstp)
 {
-
-	static int  result;
+	static bool_t  result;
 
 	/*
 	 * insert server code here
 	 */
 
-	return(&result);
+	return &result;
 }

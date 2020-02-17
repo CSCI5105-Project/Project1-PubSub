@@ -4,119 +4,56 @@
  */
 
 #include "PubSub.h"
-#include <sys/ioctl.h>
-#include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <netdb.h>
-#include <signal.h>
-#include <sys/ttycom.h>
+#include <rpc/pmap_clnt.h>
+#include <string.h>
 #include <memory.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
-#include <syslog.h>
 
-#ifdef __STDC__
+#ifndef SIG_PF
 #define SIG_PF void(*)(int)
 #endif
 
-#ifdef DEBUG
-#define RPC_SVC_FG
-#endif
-
-#define _RPCSVC_CLOSEDOWN 120
-static int _rpcpmstart;		/* Started by a port monitor ? */
-static int _rpcfdtype;		/* Whether Stream or Datagram ? */
-static int _rpcsvcdirty;	/* Still serving ? */
-
-static
-void _msgout(msg)
-	char *msg;
+static bool_t *
+_join_1 (join_1_argument *argp, struct svc_req *rqstp)
 {
-#ifdef RPC_SVC_FG
-	if (_rpcpmstart)
-		syslog(LOG_ERR, "%s", msg);
-	else
-		(void) fprintf(stderr, "%s\n", msg);
-#else
-	syslog(LOG_ERR, "%s", msg);
-#endif
+	return (join_1_svc(argp->IP, argp->Port, rqstp));
+}
+
+static bool_t *
+_leave_1 (leave_1_argument *argp, struct svc_req *rqstp)
+{
+	return (leave_1_svc(argp->IP, argp->Port, rqstp));
+}
+
+static bool_t *
+_subscribe_1 (subscribe_1_argument *argp, struct svc_req *rqstp)
+{
+	return (subscribe_1_svc(argp->IP, argp->Port, argp->Article, rqstp));
+}
+
+static bool_t *
+_unsubscribe_1 (unsubscribe_1_argument *argp, struct svc_req *rqstp)
+{
+	return (unsubscribe_1_svc(argp->IP, argp->Port, argp->Article, rqstp));
+}
+
+static bool_t *
+_publish_1 (publish_1_argument *argp, struct svc_req *rqstp)
+{
+	return (publish_1_svc(argp->Article, argp->IP, argp->Port, rqstp));
+}
+
+static bool_t *
+_ping_1 (void  *argp, struct svc_req *rqstp)
+{
+	return (ping_1_svc(rqstp));
 }
 
 static void
-closedown()
-{
-	if (_rpcsvcdirty == 0) {
-		extern fd_set svc_fdset;
-		static int size;
-		int i, openfd;
-
-		if (_rpcfdtype == SOCK_DGRAM)
-			exit(0);
-		if (size == 0) {
-			size = getdtablesize();
-		}
-		for (i = 0, openfd = 0; i < size && openfd < 2; i++)
-			if (FD_ISSET(i, &svc_fdset))
-				openfd++;
-		if (openfd <= (_rpcpmstart?0:1))
-			exit(0);
-	}
-	(void) alarm(_RPCSVC_CLOSEDOWN);
-}
-
-static int *
-_join_1(argp, rqstp)
-	join_1_argument *argp;
-	struct svc_req *rqstp;
-{
-	return(join_1_svc(argp->IP, argp->Port, rqstp));
-}
-
-static int *
-_leave_1(argp, rqstp)
-	leave_1_argument *argp;
-	struct svc_req *rqstp;
-{
-	return(leave_1_svc(argp->IP, argp->Port, rqstp));
-}
-
-static int *
-_subscribe_1(argp, rqstp)
-	subscribe_1_argument *argp;
-	struct svc_req *rqstp;
-{
-	return(subscribe_1_svc(argp->IP, argp->Port, argp->Article, rqstp));
-}
-
-static int *
-_unsubscribe_1(argp, rqstp)
-	unsubscribe_1_argument *argp;
-	struct svc_req *rqstp;
-{
-	return(unsubscribe_1_svc(argp->IP, argp->Port, argp->Article, rqstp));
-}
-
-static int *
-_publish_1(argp, rqstp)
-	publish_1_argument *argp;
-	struct svc_req *rqstp;
-{
-	return(publish_1_svc(argp->IP, argp->Port, argp->Article, rqstp));
-}
-
-static int *
-_ping_1(argp, rqstp)
-	void  *argp;
-	struct svc_req *rqstp;
-{
-	return(ping_1_svc(rqstp));
-}
-
-static void
-pubsub_1(rqstp, transp)
-	struct svc_req *rqstp;
-	SVCXPRT *transp;
+communicate_prog_1(struct svc_req *rqstp, register SVCXPRT *transp)
 {
 	union {
 		join_1_argument join_1_arg;
@@ -126,170 +63,99 @@ pubsub_1(rqstp, transp)
 		publish_1_argument publish_1_arg;
 	} argument;
 	char *result;
-	bool_t (*xdr_argument)(), (*xdr_result)();
-	char *(*local)();
+	xdrproc_t _xdr_argument, _xdr_result;
+	char *(*local)(char *, struct svc_req *);
 
-	_rpcsvcdirty = 1;
 	switch (rqstp->rq_proc) {
 	case NULLPROC:
-		(void) svc_sendreply(transp, (xdrproc_t) xdr_void, (char *)NULL);
-		_rpcsvcdirty = 0;
+		(void) svc_sendreply (transp, (xdrproc_t) xdr_void, (char *)NULL);
 		return;
 
-	case join:
-		xdr_argument = xdr_join_1_argument;
-		xdr_result = xdr_int;
-		local = (char *(*)()) _join_1;
+	case Join:
+		_xdr_argument = (xdrproc_t) xdr_join_1_argument;
+		_xdr_result = (xdrproc_t) xdr_bool;
+		local = (char *(*)(char *, struct svc_req *)) _join_1;
 		break;
 
-	case leave:
-		xdr_argument = xdr_leave_1_argument;
-		xdr_result = xdr_int;
-		local = (char *(*)()) _leave_1;
+	case Leave:
+		_xdr_argument = (xdrproc_t) xdr_leave_1_argument;
+		_xdr_result = (xdrproc_t) xdr_bool;
+		local = (char *(*)(char *, struct svc_req *)) _leave_1;
 		break;
 
-	case subscribe:
-		xdr_argument = xdr_subscribe_1_argument;
-		xdr_result = xdr_int;
-		local = (char *(*)()) _subscribe_1;
+	case Subscribe:
+		_xdr_argument = (xdrproc_t) xdr_subscribe_1_argument;
+		_xdr_result = (xdrproc_t) xdr_bool;
+		local = (char *(*)(char *, struct svc_req *)) _subscribe_1;
 		break;
 
-	case unsubscribe:
-		xdr_argument = xdr_unsubscribe_1_argument;
-		xdr_result = xdr_int;
-		local = (char *(*)()) _unsubscribe_1;
+	case Unsubscribe:
+		_xdr_argument = (xdrproc_t) xdr_unsubscribe_1_argument;
+		_xdr_result = (xdrproc_t) xdr_bool;
+		local = (char *(*)(char *, struct svc_req *)) _unsubscribe_1;
 		break;
 
-	case publish:
-		xdr_argument = xdr_publish_1_argument;
-		xdr_result = xdr_int;
-		local = (char *(*)()) _publish_1;
+	case Publish:
+		_xdr_argument = (xdrproc_t) xdr_publish_1_argument;
+		_xdr_result = (xdrproc_t) xdr_bool;
+		local = (char *(*)(char *, struct svc_req *)) _publish_1;
 		break;
 
-	case ping:
-		xdr_argument = xdr_void;
-		xdr_result = xdr_int;
-		local = (char *(*)()) _ping_1;
+	case Ping:
+		_xdr_argument = (xdrproc_t) xdr_void;
+		_xdr_result = (xdrproc_t) xdr_bool;
+		local = (char *(*)(char *, struct svc_req *)) _ping_1;
 		break;
 
 	default:
-		svcerr_noproc(transp);
-		_rpcsvcdirty = 0;
+		svcerr_noproc (transp);
 		return;
 	}
-	(void) memset((char *)&argument, 0, sizeof (argument));
-	if (!svc_getargs(transp, xdr_argument, (caddr_t) &argument)) {
-		svcerr_decode(transp);
-		_rpcsvcdirty = 0;
+	memset ((char *)&argument, 0, sizeof (argument));
+	if (!svc_getargs (transp, (xdrproc_t) _xdr_argument, (caddr_t) &argument)) {
+		svcerr_decode (transp);
 		return;
 	}
-	result = (*local)(&argument, rqstp);
-	if (result != NULL && !svc_sendreply(transp, (xdrproc_t) xdr_result, result)) {
-		svcerr_systemerr(transp);
+	result = (*local)((char *)&argument, rqstp);
+	if (result != NULL && !svc_sendreply(transp, (xdrproc_t) _xdr_result, result)) {
+		svcerr_systemerr (transp);
 	}
-	if (!svc_freeargs(transp, xdr_argument, (caddr_t) &argument)) {
-		_msgout("unable to free arguments");
-		exit(1);
+	if (!svc_freeargs (transp, (xdrproc_t) _xdr_argument, (caddr_t) &argument)) {
+		fprintf (stderr, "%s", "unable to free arguments");
+		exit (1);
 	}
-	_rpcsvcdirty = 0;
 	return;
 }
 
-
-
 int
-main(argc, argv)
-int argc;
-char *argv[];
+main (int argc, char **argv)
 {
-	SVCXPRT *transp = NULL;
-	int sock;
-	int proto = 0;
-	struct sockaddr_in saddr;
-	int asize = sizeof (saddr);
+	register SVCXPRT *transp;
 
-	if (getsockname(0, (struct sockaddr *)&saddr, &asize) == 0) {
-		int ssize = sizeof (int);
+	pmap_unset (COMMUNICATE_PROG, COMMUNICATE_VERSION);
 
-		if (saddr.sin_family != AF_INET)
-			exit(1);
-		if (getsockopt(0, SOL_SOCKET, SO_TYPE,
-				(char *)&_rpcfdtype, &ssize) == -1)
-			exit(1);
-		sock = 0;
-		_rpcpmstart = 1;
-		proto = 0;
-		openlog("PubSub", LOG_PID, LOG_DAEMON);
-	} else {
-#ifndef RPC_SVC_FG
-		int size;
-		int pid, i;
-
-		pid = fork();
-		if (pid < 0) {
-			perror("cannot fork");
-			exit(1);
-		}
-		if (pid)
-			exit(0);
-		size = getdtablesize();
-		for (i = 0; i < size; i++)
-			(void) close(i);
-		i = open("/dev/console", 2);
-		(void) dup2(i, 1);
-		(void) dup2(i, 2);
-		i = open("/dev/tty", 2);
-		if (i >= 0) {
-			(void) ioctl(i, TIOCNOTTY, (char *)NULL);
-			(void) close(i);
-		}
-		openlog("PubSub", LOG_PID, LOG_DAEMON);
-#endif
-		sock = RPC_ANYSOCK;
-		(void) pmap_unset(PubSub, VERSION);
-	}
-
-	if ((_rpcfdtype == 0) || (_rpcfdtype == SOCK_DGRAM)) {
-		transp = svcudp_create(sock);
-		if (transp == NULL) {
-			_msgout("cannot create udp service.");
-			exit(1);
-		}
-		if (!_rpcpmstart)
-			proto = IPPROTO_UDP;
-		if (!svc_register(transp, PubSub, VERSION, pubsub_1, proto)) {
-			_msgout("unable to register (PubSub, VERSION, udp).");
-			exit(1);
-		}
-	}
-
-	if ((_rpcfdtype == 0) || (_rpcfdtype == SOCK_STREAM)) {
-		if (_rpcpmstart)
-			transp = svcfd_create(sock, 0, 0);
-		else
-			transp = svctcp_create(sock, 0, 0);
-		if (transp == NULL) {
-			_msgout("cannot create tcp service.");
-			exit(1);
-		}
-		if (!_rpcpmstart)
-			proto = IPPROTO_TCP;
-		if (!svc_register(transp, PubSub, VERSION, pubsub_1, proto)) {
-			_msgout("unable to register (PubSub, VERSION, tcp).");
-			exit(1);
-		}
-	}
-
-	if (transp == (SVCXPRT *)NULL) {
-		_msgout("could not create a handle");
+	transp = svcudp_create(RPC_ANYSOCK);
+	if (transp == NULL) {
+		fprintf (stderr, "%s", "cannot create udp service.");
 		exit(1);
 	}
-	if (_rpcpmstart) {
-		(void) signal(SIGALRM, (void(*)()) closedown);
-		(void) alarm(_RPCSVC_CLOSEDOWN);
+	if (!svc_register(transp, COMMUNICATE_PROG, COMMUNICATE_VERSION, communicate_prog_1, IPPROTO_UDP)) {
+		fprintf (stderr, "%s", "unable to register (COMMUNICATE_PROG, COMMUNICATE_VERSION, udp).");
+		exit(1);
 	}
-	svc_run();
-	_msgout("svc_run returned");
-	exit(1);
+
+	transp = svctcp_create(RPC_ANYSOCK, 0, 0);
+	if (transp == NULL) {
+		fprintf (stderr, "%s", "cannot create tcp service.");
+		exit(1);
+	}
+	if (!svc_register(transp, COMMUNICATE_PROG, COMMUNICATE_VERSION, communicate_prog_1, IPPROTO_TCP)) {
+		fprintf (stderr, "%s", "unable to register (COMMUNICATE_PROG, COMMUNICATE_VERSION, tcp).");
+		exit(1);
+	}
+
+	svc_run ();
+	fprintf (stderr, "%s", "svc_run returned");
+	exit (1);
 	/* NOTREACHED */
 }

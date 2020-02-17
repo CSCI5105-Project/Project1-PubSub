@@ -6,9 +6,12 @@
 #ifndef _PUBSUB_H_RPCGEN
 #define _PUBSUB_H_RPCGEN
 
-#define RPCGEN_VERSION	199506
-
 #include <rpc/rpc.h>
+
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 
 struct join_1_argument {
@@ -16,28 +19,12 @@ struct join_1_argument {
 	int Port;
 };
 typedef struct join_1_argument join_1_argument;
-#ifdef __cplusplus
-extern "C" bool_t xdr_join_1_argument(XDR *, join_1_argument);
-#elif __STDC__
-extern  bool_t xdr_join_1_argument(XDR *, join_1_argument);
-#else /* Old Style C */
-bool_t xdr_join_1_argument();
-#endif /* Old Style C */
-
 
 struct leave_1_argument {
 	char *IP;
 	int Port;
 };
 typedef struct leave_1_argument leave_1_argument;
-#ifdef __cplusplus
-extern "C" bool_t xdr_leave_1_argument(XDR *, leave_1_argument);
-#elif __STDC__
-extern  bool_t xdr_leave_1_argument(XDR *, leave_1_argument);
-#else /* Old Style C */
-bool_t xdr_leave_1_argument();
-#endif /* Old Style C */
-
 
 struct subscribe_1_argument {
 	char *IP;
@@ -45,14 +32,6 @@ struct subscribe_1_argument {
 	char *Article;
 };
 typedef struct subscribe_1_argument subscribe_1_argument;
-#ifdef __cplusplus
-extern "C" bool_t xdr_subscribe_1_argument(XDR *, subscribe_1_argument);
-#elif __STDC__
-extern  bool_t xdr_subscribe_1_argument(XDR *, subscribe_1_argument);
-#else /* Old Style C */
-bool_t xdr_subscribe_1_argument();
-#endif /* Old Style C */
-
 
 struct unsubscribe_1_argument {
 	char *IP;
@@ -60,92 +39,80 @@ struct unsubscribe_1_argument {
 	char *Article;
 };
 typedef struct unsubscribe_1_argument unsubscribe_1_argument;
-#ifdef __cplusplus
-extern "C" bool_t xdr_unsubscribe_1_argument(XDR *, unsubscribe_1_argument);
-#elif __STDC__
-extern  bool_t xdr_unsubscribe_1_argument(XDR *, unsubscribe_1_argument);
-#else /* Old Style C */
-bool_t xdr_unsubscribe_1_argument();
-#endif /* Old Style C */
-
 
 struct publish_1_argument {
+	char *Article;
 	char *IP;
 	int Port;
-	char *Article;
 };
 typedef struct publish_1_argument publish_1_argument;
+
+#define COMMUNICATE_PROG 0x20406080
+#define COMMUNICATE_VERSION 1
+
+#if defined(__STDC__) || defined(__cplusplus)
+#define Join 1
+extern  bool_t * join_1(char *, int , CLIENT *);
+extern  bool_t * join_1_svc(char *, int , struct svc_req *);
+#define Leave 2
+extern  bool_t * leave_1(char *, int , CLIENT *);
+extern  bool_t * leave_1_svc(char *, int , struct svc_req *);
+#define Subscribe 3
+extern  bool_t * subscribe_1(char *, int , char *, CLIENT *);
+extern  bool_t * subscribe_1_svc(char *, int , char *, struct svc_req *);
+#define Unsubscribe 4
+extern  bool_t * unsubscribe_1(char *, int , char *, CLIENT *);
+extern  bool_t * unsubscribe_1_svc(char *, int , char *, struct svc_req *);
+#define Publish 5
+extern  bool_t * publish_1(char *, char *, int , CLIENT *);
+extern  bool_t * publish_1_svc(char *, char *, int , struct svc_req *);
+#define Ping 6
+extern  bool_t * ping_1(CLIENT *);
+extern  bool_t * ping_1_svc(struct svc_req *);
+extern int communicate_prog_1_freeresult (SVCXPRT *, xdrproc_t, caddr_t);
+
+#else /* K&R C */
+#define Join 1
+extern  bool_t * join_1();
+extern  bool_t * join_1_svc();
+#define Leave 2
+extern  bool_t * leave_1();
+extern  bool_t * leave_1_svc();
+#define Subscribe 3
+extern  bool_t * subscribe_1();
+extern  bool_t * subscribe_1_svc();
+#define Unsubscribe 4
+extern  bool_t * unsubscribe_1();
+extern  bool_t * unsubscribe_1_svc();
+#define Publish 5
+extern  bool_t * publish_1();
+extern  bool_t * publish_1_svc();
+#define Ping 6
+extern  bool_t * ping_1();
+extern  bool_t * ping_1_svc();
+extern int communicate_prog_1_freeresult ();
+#endif /* K&R C */
+
+/* the xdr functions */
+
+#if defined(__STDC__) || defined(__cplusplus)
+extern  bool_t xdr_join_1_argument (XDR *, join_1_argument*);
+extern  bool_t xdr_leave_1_argument (XDR *, leave_1_argument*);
+extern  bool_t xdr_subscribe_1_argument (XDR *, subscribe_1_argument*);
+extern  bool_t xdr_unsubscribe_1_argument (XDR *, unsubscribe_1_argument*);
+extern  bool_t xdr_publish_1_argument (XDR *, publish_1_argument*);
+
+#else /* K&R C */
+extern bool_t xdr_join_1_argument ();
+extern bool_t xdr_leave_1_argument ();
+extern bool_t xdr_subscribe_1_argument ();
+extern bool_t xdr_unsubscribe_1_argument ();
+extern bool_t xdr_publish_1_argument ();
+
+#endif /* K&R C */
+
 #ifdef __cplusplus
-extern "C" bool_t xdr_publish_1_argument(XDR *, publish_1_argument);
-#elif __STDC__
-extern  bool_t xdr_publish_1_argument(XDR *, publish_1_argument);
-#else /* Old Style C */
-bool_t xdr_publish_1_argument();
-#endif /* Old Style C */
-
-
-#define PubSub ((rpc_uint)0x20406080)
-#define VERSION ((rpc_uint)1)
-
-#ifdef __cplusplus
-#define join ((rpc_uint)1)
-extern "C" int * join_1(char *, int , CLIENT *);
-extern "C" int * join_1_svc(char *, int , struct svc_req *);
-#define leave ((rpc_uint)2)
-extern "C" int * leave_1(char *, int , CLIENT *);
-extern "C" int * leave_1_svc(char *, int , struct svc_req *);
-#define subscribe ((rpc_uint)3)
-extern "C" int * subscribe_1(char *, int , char *, CLIENT *);
-extern "C" int * subscribe_1_svc(char *, int , char *, struct svc_req *);
-#define unsubscribe ((rpc_uint)4)
-extern "C" int * unsubscribe_1(char *, int , char *, CLIENT *);
-extern "C" int * unsubscribe_1_svc(char *, int , char *, struct svc_req *);
-#define publish ((rpc_uint)5)
-extern "C" int * publish_1(char *, int , char *, CLIENT *);
-extern "C" int * publish_1_svc(char *, int , char *, struct svc_req *);
-#define ping ((rpc_uint)6)
-extern "C" int * ping_1(CLIENT *);
-extern "C" int * ping_1_svc(struct svc_req *);
-
-#elif __STDC__
-#define join ((rpc_uint)1)
-extern  int * join_1(char *, int , CLIENT *);
-extern  int * join_1_svc(char *, int , struct svc_req *);
-#define leave ((rpc_uint)2)
-extern  int * leave_1(char *, int , CLIENT *);
-extern  int * leave_1_svc(char *, int , struct svc_req *);
-#define subscribe ((rpc_uint)3)
-extern  int * subscribe_1(char *, int , char *, CLIENT *);
-extern  int * subscribe_1_svc(char *, int , char *, struct svc_req *);
-#define unsubscribe ((rpc_uint)4)
-extern  int * unsubscribe_1(char *, int , char *, CLIENT *);
-extern  int * unsubscribe_1_svc(char *, int , char *, struct svc_req *);
-#define publish ((rpc_uint)5)
-extern  int * publish_1(char *, int , char *, CLIENT *);
-extern  int * publish_1_svc(char *, int , char *, struct svc_req *);
-#define ping ((rpc_uint)6)
-extern  int * ping_1(CLIENT *);
-extern  int * ping_1_svc(struct svc_req *);
-
-#else /* Old Style C */
-#define join ((rpc_uint)1)
-extern  int * join_1();
-extern  int * join_1_svc();
-#define leave ((rpc_uint)2)
-extern  int * leave_1();
-extern  int * leave_1_svc();
-#define subscribe ((rpc_uint)3)
-extern  int * subscribe_1();
-extern  int * subscribe_1_svc();
-#define unsubscribe ((rpc_uint)4)
-extern  int * unsubscribe_1();
-extern  int * unsubscribe_1_svc();
-#define publish ((rpc_uint)5)
-extern  int * publish_1();
-extern  int * publish_1_svc();
-#define ping ((rpc_uint)6)
-extern  int * ping_1();
-extern  int * ping_1_svc();
-#endif /* Old Style C */
+}
+#endif
 
 #endif /* !_PUBSUB_H_RPCGEN */
