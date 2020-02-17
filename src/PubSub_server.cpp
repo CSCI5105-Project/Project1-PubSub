@@ -5,6 +5,7 @@
  */
 
 #include "PubSub.h"
+#include <stdio.h>
 
 bool_t *
 join_1_svc(char *IP, int Port,  struct svc_req *rqstp)
@@ -14,7 +15,7 @@ join_1_svc(char *IP, int Port,  struct svc_req *rqstp)
 	/*
 	 * insert server code here
 	 */
-
+	fprintf(stdout, "Join success!!!\n");
 	return &result;
 }
 

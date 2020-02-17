@@ -11,6 +11,13 @@
 #include <memory.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <unistd.h>
+ 
+#include <sys/socket.h>
+#include <sys/ioctl.h>
+#include <netinet/in.h>
+#include <net/if.h>
+#include <arpa/inet.h>
 
 #ifndef SIG_PF
 #define SIG_PF void(*)(int)
@@ -127,6 +134,35 @@ communicate_prog_1(struct svc_req *rqstp, register SVCXPRT *transp)
 	return;
 }
 
+// unsigned char * getIP()
+// {
+// 	unsigned char ip_address[15];
+//     int fd;
+//     struct ifreq ifr;
+     
+//     /*AF_INET - to define network interface IPv4*/
+//     /*Creating soket for it.*/
+//     fd = socket(AF_INET, SOCK_DGRAM, 0);
+     
+//     /*AF_INET - to define IPv4 Address type.*/
+//     ifr.ifr_addr.sa_family = AF_INET;
+     
+//     /*eth0 - define the ifr_name - port name
+//     where network attached.*/
+//     memcpy(ifr.ifr_name, "eno1", IFNAMSIZ-1);
+     
+//     /*Accessing network interface information by
+//     passing address using ioctl.*/
+//     ioctl(fd, SIOCGIFADDR, &ifr);
+//     /*closing fd*/
+//     close(fd);
+     
+//     /*Extract IP Address*/
+//     strcpy(ip_address,inet_ntoa(((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr));
+
+// 	return ip_address;
+// }
+
 int
 main (int argc, char **argv)
 {
@@ -153,6 +189,8 @@ main (int argc, char **argv)
 		fprintf (stderr, "%s", "unable to register (COMMUNICATE_PROG, COMMUNICATE_VERSION, tcp).");
 		exit(1);
 	}
+
+	
 
 	svc_run ();
 	fprintf (stderr, "%s", "svc_run returned");
