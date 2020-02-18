@@ -6,10 +6,12 @@
 
 #include "PubSub.h"
 #include "client.h"
+#include "stringTokenizer.h"
 #include <stdio.h>
 #include <vector>
 #include <arpa/inet.h>
 #include <algorithm>
+#include <iostream>
 
 using namespace std;
 
@@ -70,11 +72,29 @@ subscribe_1_svc(char *IP, int Port, char *Article,  struct svc_req *rqstp)
 {
 	static bool_t  result;
 
-	for (auto it = clients.begin(); it != clients.end(); ++it) {
-		Client c = *it;
+	CStringTokenizer token;
+	token.Split(Article, ";");
+	string s;
 
+	auto it = seek_Client(IP,Port);
+	if (it != clients.end()) {
+		s = token.GetNext();
+		if (s.size() > 0) it->sub_types.push_back(s);
+		fprintf(stdout,"subscribe() %s successfully.\n", s.c_str());
+
+		s = token.GetNext();
+		if (s.size() > 0) it->sub_originators.push_back(s);
+		fprintf(stdout,"subscribe() %s successfully.\n", s.c_str());
+
+		s = token.GetNext();
+		if (s.size() > 0) it->sub_orgs.push_back(s);
+		fprintf(stdout,"subscribe() %s successfully.\n", s.c_str());
+
+		result = true;
+	} else {
+		fprintf(stdout, "subscribe() failed: cannot find Client (%s, %d)\n", IP, Port);
+		result = false;
 	}
-
 	return &result;
 }
 
@@ -83,9 +103,50 @@ unsubscribe_1_svc(char *IP, int Port, char *Article,  struct svc_req *rqstp)
 {
 	static bool_t  result;
 
-	/*
-	 * insert server code here
-	 */
+	CStringTokenizer token;
+	token.Split(Article, ";");
+	string s;
+
+	auto it = seek_Client(IP,Port);
+	if (it != clients.end()) {
+		Client &c = *it;
+
+		s = token.GetNext();
+		if (s.size() > 0) {
+			for (auto it2 = c.sub_types.begin(); it2 != c.sub_types.end(); ++it2) {
+				if (*it2 == s) {
+					c.sub_types.erase(it2);
+					fprintf(stdout,"unsubscribe() %s successfully.\n", s.c_str());
+					break;
+				}
+			}
+		}
+
+		s = token.GetNext();
+		if (s.size() > 0) {
+			for (auto it2 = c.sub_originators.begin(); it2 != c.sub_originators.end(); ++it2) {
+				if (*it2 == s) {
+					c.sub_originators.erase(it2);
+					fprintf(stdout,"unsubscribe() %s successfully.\n", s.c_str());
+					break;
+				}
+			}
+		}
+
+		s = token.GetNext();
+		if (s.size() > 0) {
+			for (auto it2 = c.sub_orgs.begin(); it2 != c.sub_orgs.end(); ++it2) {
+				if (*it2 == s) {
+					c.sub_orgs.erase(it2);
+					fprintf(stdout,"unsubscribe() %s successfully.\n", s.c_str());
+					break;
+				}
+			}
+		}
+	} else {
+		fprintf(stdout, "unsubscribe() failed: cannot find Client (%s, %d)\n", IP, Port);
+		result = false;	
+	}
 
 	return &result;
 }
