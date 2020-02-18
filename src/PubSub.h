@@ -118,3 +118,6 @@ extern bool_t xdr_publish_1_argument ();
 #endif
 
 #endif /* !_PUBSUB_H_RPCGEN */
+
+
+#define MAXSTRING 120

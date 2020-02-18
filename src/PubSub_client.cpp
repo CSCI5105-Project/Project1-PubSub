@@ -13,16 +13,60 @@
 #include <fstream>
 #include <sstream>
 #include <vector>
+ 
+#include <unistd.h>
+#include <string.h>
+
+#include <sys/socket.h>
+#include <sys/ioctl.h>
+#include <netinet/in.h>
+#include <net/if.h>
+#include <arpa/inet.h>
 
 using namespace std;
+
+struct ClientAddress {
+	char ip[15];
+	int port;
+};
+
+vector<ClientAddress> clients;
+
+char* getIP()
+{
+ 	char ip_address[15];
+    int fd;
+    struct ifreq ifr;
+     
+    /*AF_INET - to define network interface IPv4*/
+    /*Creating soket for it.*/
+    fd = socket(AF_INET, SOCK_DGRAM, 0);
+     
+    /*AF_INET - to define IPv4 Address type.*/
+    ifr.ifr_addr.sa_family = AF_INET;
+     
+    /*eth0 - define the ifr_name - port name
+    where network attached.*/
+    memcpy(ifr.ifr_name, "eno1", IFNAMSIZ-1);
+     
+    /*Accessing network interface information by
+    passing address using ioctl.*/
+    ioctl(fd, SIOCGIFADDR, &ifr);
+    /*closing fd*/
+    close(fd);
+     
+    /*Extract IP Address*/
+    strcpy(ip_address,inet_ntoa(((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr));
+
+	return ip_address;
+}
 
 void
 communicate_prog_1(char *host)
 {
 	CLIENT *clnt;
+	bool_t* result;
 	bool_t  *result_1;
-	char *join_1_IP;
-	int join_1_Port;
 	bool_t  *result_2;
 	char *leave_1_IP;
 	int leave_1_Port;
@@ -48,6 +92,7 @@ communicate_prog_1(char *host)
 	}
 #endif	/* DEBUG */
 
+	clients.clear();
 	string line;
 	ifstream myfile("test.txt");
 	if (myfile.is_open())
@@ -63,14 +108,56 @@ communicate_prog_1(char *host)
 			
 			if (cmd == "create") {
 				cout << "create" << endl;
+				ClientAddress addr;
+				strcpy(addr.ip, getIP());
+				addr.port = 6000 + clients.size();
+				clients.push_back(addr);
 			} else if (cmd == "join") {
-				cout << "join" << endl;
+				int id;
+				ss >> id;
+				cout << "Client " << id << "called join()" << endl;
+
+				result_1 = join_1(clients[id].ip, clients[id].port, clnt);
+				if (result_1 == (bool_t *) NULL) {
+					clnt_perror (clnt, "call join() failed");
+				}
 			} else if (cmd == "leave") {
-				cout << "leave" << endl;
+				int id;
+				ss >> id;
+				cout << "Client " << id << "called leave()" << endl;
+
+				result_1 = leave_1(clients[id].ip, clients[id].port, clnt);
+				if (result_1 == (bool_t *) NULL) {
+					clnt_perror (clnt, "call leave() failed");
+				}
 			} else if (cmd == "subscribe") {
-				cout << "subscribe" << endl;
-			} else if (cmd == "unsubscribe ") {
-				cout << "unsubscribe" << endl;
+				int id;
+				ss >> id;
+				cout << "Client " << id << "called subscribe()" << endl;
+
+				string s;
+				char article[MAXSTRING];
+				ss >> article;
+				strcpy(article, s.c_str());
+
+				result_1 = subscribe_1(clients[id].ip, clients[id].port, article, clnt);
+				if (result_1 == (bool_t *) NULL) {
+					clnt_perror (clnt, "call subscribe() failed");
+				}
+			} else if (cmd == "unsubscribe") {
+				int id;
+				ss >> id;
+				cout << "Client " << id << "called unsubscribe()" << endl;
+
+				string s;
+				char article[MAXSTRING];
+				ss >> article;
+				strcpy(article, s.c_str());
+
+				result_1 = unsubscribe_1(clients[id].ip, clients[id].port, article, clnt);
+				if (result_1 == (bool_t *) NULL) {
+					clnt_perror (clnt, "call unsubscribe() failed");
+				}
 			} else if (cmd == "publish") {
 
 			} else {
@@ -80,18 +167,8 @@ communicate_prog_1(char *host)
 		myfile.close();
 	}
 
-	result_1 = join_1(join_1_IP, join_1_Port, clnt);
-	if (result_1 == (bool_t *) NULL) {
-		clnt_perror (clnt, "call failed");
-	}
-	result_2 = leave_1(leave_1_IP, leave_1_Port, clnt);
-	if (result_2 == (bool_t *) NULL) {
-		clnt_perror (clnt, "call failed");
-	}
-	result_3 = subscribe_1(subscribe_1_IP, subscribe_1_Port, subscribe_1_Article, clnt);
-	if (result_3 == (bool_t *) NULL) {
-		clnt_perror (clnt, "call failed");
-	}
+
+	
 	result_4 = unsubscribe_1(unsubscribe_1_IP, unsubscribe_1_Port, unsubscribe_1_Article, clnt);
 	if (result_4 == (bool_t *) NULL) {
 		clnt_perror (clnt, "call failed");
