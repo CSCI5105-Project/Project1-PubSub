@@ -13,6 +13,7 @@
 #include <fstream>
 #include <sstream>
 #include <vector>
+#include <unistd.h>
 
 using namespace std;
 
@@ -47,7 +48,7 @@ communicate_prog_1(char *host)
 		exit (1);
 	}
 #endif	/* DEBUG */
-
+	bool flag = true;
 	string line;
 	ifstream myfile("test.txt");
 	if (myfile.is_open())
@@ -55,7 +56,7 @@ communicate_prog_1(char *host)
 		while (getline (myfile,line))
 		{	
 			if (line == "") continue;
-
+			
 			stringstream ss(line);
 			string cmd;
 			ss >> cmd;
@@ -79,7 +80,16 @@ communicate_prog_1(char *host)
 		}
 		myfile.close();
 	}
-
+	while (flag){
+		sleep(1);
+	        result_6 = ping_1(clnt);
+        	if (result_6 == (bool_t *) NULL) {
+			flag = false;
+			printf("I need to join another group.\n");
+			// join another group
+       		}
+	}
+	/*
 	result_1 = join_1(join_1_IP, join_1_Port, clnt);
 	if (result_1 == (bool_t *) NULL) {
 		clnt_perror (clnt, "call failed");
@@ -103,7 +113,7 @@ communicate_prog_1(char *host)
 	result_6 = ping_1(clnt);
 	if (result_6 == (bool_t *) NULL) {
 		clnt_perror (clnt, "call failed");
-	}
+	}*/
 #ifndef	DEBUG
 	clnt_destroy (clnt);
 #endif	 /* DEBUG */

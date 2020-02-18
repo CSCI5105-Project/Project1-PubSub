@@ -107,6 +107,7 @@ ping_1_svc(struct svc_req *rqstp)
 	/*
 	 * insert server code here
 	 */
-
+	fprintf(stdout,"Successful Ping.\n");
+	result = 1;
 	return &result;
 }
