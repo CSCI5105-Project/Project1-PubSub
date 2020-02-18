@@ -128,8 +128,8 @@ communicate_prog_1(char *host)
 				ss >> id;
 				cout << "Client " << id << "called leave()" << endl;
 
-				result_1 = leave_1(clients[id].ip, clients[id].port, clnt);
-				if (result_1 == (bool_t *) NULL) {
+				result_2 = leave_1(clients[id].ip, clients[id].port, clnt);
+				if (result_2 == (bool_t *) NULL) {
 					clnt_perror (clnt, "call leave() failed");
 				}
 			} else if (cmd == "subscribe") {
@@ -142,8 +142,8 @@ communicate_prog_1(char *host)
 				ss >> article;
 				strcpy(article, s.c_str());
 
-				result_1 = subscribe_1(clients[id].ip, clients[id].port, article, clnt);
-				if (result_1 == (bool_t *) NULL) {
+				result_3 = subscribe_1(clients[id].ip, clients[id].port, article, clnt);
+				if (result_3 == (bool_t *) NULL) {
 					clnt_perror (clnt, "call subscribe() failed");
 				}
 			} else if (cmd == "unsubscribe") {
@@ -156,14 +156,26 @@ communicate_prog_1(char *host)
 				ss >> article;
 				strcpy(article, s.c_str());
 
-				result_1 = unsubscribe_1(clients[id].ip, clients[id].port, article, clnt);
-				if (result_1 == (bool_t *) NULL) {
+				result_4 = unsubscribe_1(clients[id].ip, clients[id].port, article, clnt);
+				if (result_4 == (bool_t *) NULL) {
 					clnt_perror (clnt, "call unsubscribe() failed");
 				}
 			} else if (cmd == "publish") {
+                                int id;
+                                ss >> id;
+                                cout << "Client " << id << "called publish()" << endl;
 
-			} else {
-				cout << "Unknown command" << endl;
+                                string s;
+                                char article[MAXSTRING];
+                                ss >> article;
+                                strcpy(article, s.c_str());
+
+                                result_5 = publish_1(article, clients[id].ip, clients[id].port, clnt);
+                                if (result_5 == (bool_t *) NULL) {
+                                        clnt_perror (clnt, "call publish() failed");
+				} else {
+					cout << "Unknown command" << endl;
+				}
 			}
 		}
 		myfile.close();
