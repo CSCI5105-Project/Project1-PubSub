@@ -5,17 +5,44 @@
  */
 
 #include "PubSub.h"
+#include "client.h"
 #include <stdio.h>
+#include <vector>
+#include <arpa/inet.h>
+#include <algorithm>
+
+std::vector<Client *> Clients;
+
+Client * seek_Client(char *IP, int Port){
+	int ip;
+	inet_pton(AF_INET,IP,&ip);
+	for(Client *c : Clients){
+		if(c->ip==ip && c->port==Port){
+			return c;
+		}
+	}
+	return nullptr;
+}
 
 bool_t *
 join_1_svc(char *IP, int Port,  struct svc_req *rqstp)
 {
 	static bool_t  result;
 
-	/*
-	 * insert server code here
-	 */
-	fprintf(stdout, "Join success!!!\n");
+	if(Clients.size()>=MAXCLIENT){
+		fprintf(stderr,"Cannot add more clients!\n");
+		result = 1;
+	}
+	else if(seek_Client(IP,Port)){
+		fprintf(stderr,"Client (%s,%d) has already joined to the server!\n",IP,Port);
+		result = 1;
+	}
+	else{
+		Client *c = new Client(IP,Port);
+		Clients.push_back(c);
+		fprintf(stdout,"Client (%s,%d) Join successfully!!\n",IP,Port);
+	}
+	
 	return &result;
 }
 
@@ -23,11 +50,16 @@ bool_t *
 leave_1_svc(char *IP, int Port,  struct svc_req *rqstp)
 {
 	static bool_t  result;
-
-	/*
-	 * insert server code here
-	 */
-
+	Client *c = seek_Client(IP,Port);
+	if(c){
+		Clients.erase(std::remove(Clients.begin(),Clients.end(),c),Clients.end());
+		delete c;
+		printf("Client (%s,%d) leaves group server successfully!!\n",IP,Port);
+	}
+	else{
+		fprintf(stderr,"Cannot find Client (%s,%d)!!\n",IP,Port);
+		result = 1;
+	}
 	return &result;
 }
 

@@ -13,6 +13,8 @@
 extern "C" {
 #endif
 
+#define MAXCLIENT 100
+
 
 struct join_1_argument {
 	char *IP;

@@ -5,7 +5,8 @@
  */
 
 #include "PubSub.h"
-
+#include <stdio.h>
+#include <stdlib.h>
 
 void
 communicate_prog_1(char *host)
@@ -43,7 +44,6 @@ communicate_prog_1(char *host)
 	if (result_1 == (bool_t *) NULL) {
 		clnt_perror (clnt, "call failed");
 	}
-	return;
 	result_2 = leave_1(leave_1_IP, leave_1_Port, clnt);
 	if (result_2 == (bool_t *) NULL) {
 		clnt_perror (clnt, "call failed");
@@ -80,6 +80,23 @@ main (int argc, char *argv[])
 		exit (1);
 	}
 	host = argv[1];
-	communicate_prog_1 (host);
+	CLIENT *clnt = clnt_create (host, COMMUNICATE_PROG, COMMUNICATE_VERSION, "udp");
+	if (clnt == NULL) {
+		clnt_pcreateerror (host);
+		exit (1);
+	}
+	char ip_1[] = "127.0.0.1";
+	char ip_2[] = "127.0.0.2";
+	char ip_3[] = "127.0.0.3";
+	char ip_4[] = "127.0.0.4";
+	int port = 5105;
+	join_1(ip_1,port,clnt);
+	join_1(ip_1,port,clnt);
+	join_1(ip_2,port,clnt);
+	join_1(ip_3,port,clnt);
+	leave_1(ip_4,port,clnt);
+	join_1(ip_4,port,clnt);
+	leave_1(ip_1,port,clnt);
+	// communicate_prog_1 (host);
 exit (0);
 }
