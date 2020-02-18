@@ -23,6 +23,7 @@
 #include <net/if.h>
 #include <arpa/inet.h>
 
+
 using namespace std;
 
 struct ClientAddress {
@@ -93,6 +94,7 @@ communicate_prog_1(char *host)
 #endif	/* DEBUG */
 
 	clients.clear();
+	bool flag = true;
 	string line;
 	ifstream myfile("test.txt");
 	if (myfile.is_open())
@@ -100,7 +102,7 @@ communicate_prog_1(char *host)
 		while (getline (myfile,line))
 		{	
 			if (line == "") continue;
-
+			
 			stringstream ss(line);
 			string cmd;
 			ss >> cmd;
@@ -167,20 +169,16 @@ communicate_prog_1(char *host)
 		myfile.close();
 	}
 
+	while (flag){
+		sleep(1);
+	        result_6 = ping_1(clnt);
+        	if (result_6 == (bool_t *) NULL) {
+			flag = false;
+			printf("I need to join another group.\n");
+			// join another group
+       		}
+	}
 
-	
-	result_4 = unsubscribe_1(unsubscribe_1_IP, unsubscribe_1_Port, unsubscribe_1_Article, clnt);
-	if (result_4 == (bool_t *) NULL) {
-		clnt_perror (clnt, "call failed");
-	}
-	result_5 = publish_1(publish_1_Article, publish_1_IP, publish_1_Port, clnt);
-	if (result_5 == (bool_t *) NULL) {
-		clnt_perror (clnt, "call failed");
-	}
-	result_6 = ping_1(clnt);
-	if (result_6 == (bool_t *) NULL) {
-		clnt_perror (clnt, "call failed");
-	}
 #ifndef	DEBUG
 	clnt_destroy (clnt);
 #endif	 /* DEBUG */
