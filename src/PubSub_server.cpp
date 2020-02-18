@@ -11,17 +11,20 @@
 #include <arpa/inet.h>
 #include <algorithm>
 
-std::vector<Client *> Clients;
+using namespace std;
 
-Client * seek_Client(char *IP, int Port){
+vector<Client> clients;
+
+vector<Client>::iterator seek_Client(char *IP, int Port){
 	int ip;
 	inet_pton(AF_INET,IP,&ip);
-	for(Client *c : Clients){
-		if(c->ip==ip && c->port==Port){
-			return c;
+	auto it = clients.begin();
+	for (; it != clients.end(); ++it) {
+		if (it->ip == ip && it->port == Port) {
+			return it;
 		}
 	}
-	return nullptr;
+	return it;
 }
 
 bool_t *
@@ -29,17 +32,17 @@ join_1_svc(char *IP, int Port,  struct svc_req *rqstp)
 {
 	static bool_t  result;
 
-	if(Clients.size()>=MAXCLIENT){
+	if(clients.size()>=MAXCLIENT){
 		fprintf(stderr,"Cannot add more clients!\n");
 		result = 1;
 	}
-	else if(seek_Client(IP,Port)){
+	else if(seek_Client(IP,Port) != clients.end()){
 		fprintf(stderr,"Client (%s,%d) has already joined to the server!\n",IP,Port);
 		result = 1;
 	}
 	else{
-		Client *c = new Client(IP,Port);
-		Clients.push_back(c);
+		Client c(IP,Port);
+		clients.push_back(c);
 		fprintf(stdout,"Client (%s,%d) Join successfully!!\n",IP,Port);
 	}
 	
@@ -50,10 +53,9 @@ bool_t *
 leave_1_svc(char *IP, int Port,  struct svc_req *rqstp)
 {
 	static bool_t  result;
-	Client *c = seek_Client(IP,Port);
-	if(c){
-		Clients.erase(std::remove(Clients.begin(),Clients.end(),c),Clients.end());
-		delete c;
+	auto it = seek_Client(IP,Port);
+	if(it != clients.end()){
+		clients.erase(it);
 		printf("Client (%s,%d) leaves group server successfully!!\n",IP,Port);
 	}
 	else{
@@ -68,9 +70,10 @@ subscribe_1_svc(char *IP, int Port, char *Article,  struct svc_req *rqstp)
 {
 	static bool_t  result;
 
-	/*
-	 * insert server code here
-	 */
+	for (auto it = clients.begin(); it != clients.end(); ++it) {
+		Client c = *it;
+
+	}
 
 	return &result;
 }
