@@ -7,6 +7,14 @@
 #include "PubSub.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string>
+#include <cstring>
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <vector>
+
+using namespace std;
 
 void
 communicate_prog_1(char *host)
@@ -39,6 +47,38 @@ communicate_prog_1(char *host)
 		exit (1);
 	}
 #endif	/* DEBUG */
+
+	string line;
+	ifstream myfile("test.txt");
+	if (myfile.is_open())
+	{
+		while (getline (myfile,line))
+		{	
+			if (line == "") continue;
+
+			stringstream ss(line);
+			string cmd;
+			ss >> cmd;
+			if (cmd[0] == '#') continue;
+			
+			if (cmd == "create") {
+				cout << "create" << endl;
+			} else if (cmd == "join") {
+				cout << "join" << endl;
+			} else if (cmd == "leave") {
+				cout << "leave" << endl;
+			} else if (cmd == "subscribe") {
+				cout << "subscribe" << endl;
+			} else if (cmd == "unsubscribe ") {
+				cout << "unsubscribe" << endl;
+			} else if (cmd == "publish") {
+
+			} else {
+				cout << "Unknown command" << endl;
+			}
+		}
+		myfile.close();
+	}
 
 	result_1 = join_1(join_1_IP, join_1_Port, clnt);
 	if (result_1 == (bool_t *) NULL) {
@@ -97,6 +137,6 @@ main (int argc, char *argv[])
 	leave_1(ip_4,port,clnt);
 	join_1(ip_4,port,clnt);
 	leave_1(ip_1,port,clnt);
-	// communicate_prog_1 (host);
+	communicate_prog_1 (host);
 exit (0);
 }

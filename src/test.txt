@@ -1,0 +1,6 @@
+create
+join id
+subscribe id "aaaaa"
+publish id "aaaaaaa"
+leave id
+# comment should be omitted
