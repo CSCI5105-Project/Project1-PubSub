@@ -3,7 +3,9 @@
 
 Client::Client(char *ip_, int port_){
     this->port = port_;
-    inet_pton(AF_INET,ip_,&this->ip);
+    char tmp[20];
+    inet_pton(AF_INET,ip_,&tmp);
+    ip = tmp;
 
     sub_types.clear();
     sub_originators.clear();
