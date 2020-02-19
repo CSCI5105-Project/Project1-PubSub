@@ -13,7 +13,10 @@
 #include <fstream>
 #include <sstream>
 #include <vector>
- 
+#include <utility>
+#include <thread>
+#include <chrono>
+
 #include <unistd.h>
 #include <string.h>
 
@@ -22,7 +25,15 @@
 #include <netinet/in.h>
 #include <net/if.h>
 #include <arpa/inet.h>
+#include "stringTokenizer.h"
+
 #include <netdb.h>
+    
+#include <time.h>
+
+typedef enum {UNKNOWN_FORMAT=0, RPC, RMI} RPC_FORMAT;
+typedef enum {UNKNOWN_COMMAND=0, REGISTER, DEREGISTER, GETLIST} COMMAND_TYPE;
+
 
 
 using namespace std;
@@ -34,6 +45,96 @@ struct ClientAddress {
 };
 
 vector<ClientAddress> clients;
+
+vector<string> serverList; 
+
+vector<CLIENT *> rpcClients;
+
+vector<pthread_t> threads;  
+
+void* listen(void* id){
+        //int count = 0;
+        //while (count<=10){count++;cout<<"1"<<endl;}
+    	
+	int listenfd = 0;
+	int nState = 0;
+	int nReceivedBytes = 0;
+	socklen_t nClientAddr = 0;
+	char szReceivedData[129];
+	struct sockaddr_in serv_addr, client_addr;
+
+	string strCommand;
+	string strRPCFormat;
+	string strIPAddress;
+
+	COMMAND_TYPE command_type = UNKNOWN_COMMAND;
+	RPC_FORMAT rpc_format = UNKNOWN_FORMAT;
+	int nPort = 0;
+	
+	//RPC
+	uint32_t uiProgram = 0;
+	uint32_t uiVersion = 0;
+
+	string strReturn;
+
+	nClientAddr = sizeof(client_addr);
+	// socket create
+	listenfd = socket(AF_INET, SOCK_DGRAM, 0);
+
+	if(listenfd < 0)
+	{
+		perror("socket error : ");
+        return NULL;
+	}
+
+	int PORT = clients[*(int*)id].port;
+
+	serv_addr.sin_family = AF_INET;
+	serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+	serv_addr.sin_port = htons(PORT);
+
+	nState = bind(listenfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr));
+	
+	if (nState == -1)
+	{
+		perror("bind error : ");
+		return NULL;
+	}
+
+	 //Parsing Address port Info
+	CStringTokenizer stringTokenizer;
+
+	while(1){
+		nReceivedBytes = recvfrom(listenfd, szReceivedData, 128, 0, (struct sockaddr *)&client_addr, &nClientAddr);
+
+		if(nReceivedBytes == -1)
+		{
+			perror("recvFrom failed");
+			break;
+		}
+
+		szReceivedData[nReceivedBytes] = '\0';
+
+		//cout << "Received Message : " << szReceivedData << endl;
+	
+		//Tokenizer
+	    stringTokenizer.Split(szReceivedData, ";");
+
+		//Check Command Type;
+		strCommand = stringTokenizer.GetNext();
+		cout<<"type: "<<strCommand<<endl;
+		strCommand = stringTokenizer.GetNext();
+                cout<<"originator: "<<strCommand<<endl;
+		strCommand = stringTokenizer.GetNext();
+                cout<<"org: "<<strCommand<<endl;
+		strCommand = stringTokenizer.GetNext();
+                cout<<"content: "<<strCommand<<endl;		
+	
+	}
+
+
+}
+
 
 char* getIP()
 {
@@ -69,7 +170,8 @@ int GetList(char *ip, int port){
 	struct hostent *reg_server_ht;
 	struct sockaddr_in reg_server_addr;
 	char message[MAXSTRING];
-	char groupserver_list[1024];
+	char tmp_list[1024];
+	string groupserver_list;
 	//create socket
 	if ((sock = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
 	perror("cannot create socket");
@@ -92,8 +194,19 @@ int GetList(char *ip, int port){
 	} 
 	sprintf(message,"GetList;RPC;%s;%d",ip,port);
 	sendto(sock,message,sizeof(message),0,(struct sockaddr *)&reg_server_addr,sizeof(reg_server_addr));
-	recvfrom(sock,groupserver_list,sizeof(groupserver_list),0,NULL,NULL);
-	printf("%s\n",groupserver_list);
+	recvfrom(sock,tmp_list,sizeof(groupserver_list),0,NULL,NULL);
+	groupserver_list = tmp_list;
+	
+	CStringTokenizer token;
+	token.Split(groupserver_list, ";");
+	for (int i = 0; i < token.GetSize(); i+=2){
+		string ip = token.GetNext();
+		token.GetNext();
+		token.GetNext();
+		serverList.push_back(ip);
+	}
+
+	//printf("%s\n",groupserver_list);
 	close(sock);
 	return 1;
 }
@@ -150,57 +263,90 @@ communicate_prog_1(char *host)
 				strcpy(addr.ip, getIP());
 				addr.port = 6000 + clients.size();
 				clients.push_back(addr);
-				/*if(!GetList(addr.ip,addr.port)){
+				if(!GetList(addr.ip,addr.port)){
 					perror("GetList failed!\n");
-				}*/
+				}
+				srand(time(NULL));
+				int randNum = rand()%serverList.size();
+				string ip = serverList[randNum];
+				char tmp_str[20];
+				strcpy(tmp_str, ip.c_str());
+
+				CLIENT *clnt = clnt_create (tmp_str, COMMUNICATE_PROG, COMMUNICATE_VERSION, "udp");
+				if (clnt == NULL) {
+					clnt_pcreateerror (host);
+					exit (1);
+				}
+				rpcClients.push_back(clnt);	
+
+				pthread_t listenThread;
+				int id = clients.size() -1;
+				pthread_create(&listenThread, NULL, listen, (void *)&id);
+				//struct ClientAddress *args = (struct ClientAddress *)args;
+				threads.push_back(listenThread);
+				
+
+					
 			} else if (cmd == "join") {
 				int id;
 				ss >> id;
-				cout << "Client " << id << "called join()" << endl;
+				cout << "Client " << id << " called join()" << endl;
 
-				result_1 = join_1(clients[id].ip, clients[id].port, clnt);
+				result_1 = join_1(clients[id].ip, clients[id].port, rpcClients[id]);
 				if (result_1 == (bool_t *) NULL) {
 					clnt_perror (clnt, "call join() failed");
 				}
 			} else if (cmd == "leave") {
 				int id;
 				ss >> id;
-				cout << "Client " << id << "called leave()" << endl;
+				cout << "Client " << id << " called leave()" << endl;
 
-				result_1 = leave_1(clients[id].ip, clients[id].port, clnt);
+				result_1 = leave_1(clients[id].ip, clients[id].port, rpcClients[id]);
 				if (result_1 == (bool_t *) NULL) {
 					clnt_perror (clnt, "call leave() failed");
 				}
 			} else if (cmd == "subscribe") {
 				int id;
 				ss >> id;
-				cout << "Client " << id << "called subscribe()" << endl;
+				cout << "Client " << id << " called subscribe()" << endl;
 
 				string s;
 				char article[MAXSTRING];
 				ss >> article;
 				strcpy(article, s.c_str());
 
-				result_1 = subscribe_1(clients[id].ip, clients[id].port, article, clnt);
+				result_1 = subscribe_1(clients[id].ip, clients[id].port, article, rpcClients[id]);
 				if (result_1 == (bool_t *) NULL) {
-					clnt_perror (clnt, "call subscribe() failed");
+					clnt_perror (clnt, " call subscribe() failed");
 				}
 			} else if (cmd == "unsubscribe") {
 				int id;
 				ss >> id;
-				cout << "Client " << id << "called unsubscribe()" << endl;
+				cout << "Client " << id << " called unsubscribe()" << endl;
 
 				string s;
 				char article[MAXSTRING];
 				ss >> article;
 				strcpy(article, s.c_str());
 
-				result_1 = unsubscribe_1(clients[id].ip, clients[id].port, article, clnt);
+				result_1 = unsubscribe_1(clients[id].ip, clients[id].port, article, rpcClients[id]);
 				if (result_1 == (bool_t *) NULL) {
 					clnt_perror (clnt, "call unsubscribe() failed");
 				}
 			} else if (cmd == "publish") {
+				int id;
+				ss >> id;
+				cout << "Client " << id << " called publish()" << endl;
 
+				string s;
+				char article[MAXSTRING];
+				ss >> article;
+				strcpy(article, s.c_str());
+
+				result_1 = publish_1(article, clients[id].ip, clients[id].port, rpcClients[id]);
+				if (result_1 == (bool_t *) NULL) {
+					clnt_perror (clnt, " call publish() failed");
+				}
 			} else {
 				cout << "Unknown command" << endl;
 			}
@@ -239,18 +385,9 @@ main (int argc, char *argv[])
 		clnt_pcreateerror (host);
 		exit (1);
 	}
-	char ip_1[] = "127.0.0.1";
-	char ip_2[] = "127.0.0.2";
-	char ip_3[] = "127.0.0.3";
-	char ip_4[] = "127.0.0.4";
-	int port = 5105;
-	// join_1(ip_1,port,clnt);
-	// join_1(ip_1,port,clnt);
-	// join_1(ip_2,port,clnt);
-	// join_1(ip_3,port,clnt);
-	// leave_1(ip_4,port,clnt);
-	// join_1(ip_4,port,clnt);
-	// leave_1(ip_1,port,clnt);
-	communicate_prog_1 (host);
+communicate_prog_1 (host);
+for (int i=0;i<threads.size();i++){
+	int nRes = pthread_join(threads[i], NULL);
+}
 exit (0);
 }
