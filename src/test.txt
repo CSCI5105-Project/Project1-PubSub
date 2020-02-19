@@ -1,11 +1,38 @@
 create
 join 0  
-subscribe 0 a;b;c;
-publish 0 a;;c;d
-publish 0 ;b;c;d
-publish 0 ;;c;d
-publish 0 a;;;d
-publish 0 ;b;;d
+create
+join 1
+create
+join 2
+
+# Illegal subscribings
+subscribe 0 Illegal;;;
+subscribe 0 ;;;
+
+# Legal subscribings
+subscribe 0 Sports;bingbing;umn;
+subscribe 0 Business;;hust;
+
+subscribe 1 Sports;haoyu;;
+subscribe 1 Entertainment;;sdu;
+
+subscribe 2 Science;haoyu;hkust;
+
+# Illegal publishings
+publish 0 Illegal;;;IllegalTypeContent
+publish 0 ;;;onlyContent
+publish 0 Business;;;
+publish 0 ;;;;
+
+# Legal publishings
+publish 0 Sports;;;SportsContent
+publish 0 ;bingbing;;bingbingContent
+publish 1 ;;umn;umnContent
+publish 1 Business;haoyu;;business-HaoyuContent
+
 #unsubscribe 0 b;aa;;;
+
 leave 0
+leave 1
+leave 2
 # comment should be omitted

@@ -57,7 +57,8 @@ vector<pthread_t> threads;
 void* listen(void* id){
         //int count = 0;
         //while (count<=10){count++;cout<<"1"<<endl;}
-    cout << "gui dong xi" <<*(int *)id<< endl << flush;	
+
+	int clntId = *(int*)id;
 	int listenfd = 0;
 	int nState = 0;
 	int nReceivedBytes = 0;
@@ -116,21 +117,20 @@ void* listen(void* id){
 
 		szReceivedData[nReceivedBytes] = '\0';
 
-		cout << "Received Message : " << szReceivedData << endl;
 	
 		//Tokenizer
 	    stringTokenizer.Split(szReceivedData, ";");
 
+		string type, originator, orgs, content;
+
+
 		//Check Command Type;
-		strCommand = stringTokenizer.GetNext();
-		cout<<"type: "<<strCommand<<endl;
-		strCommand = stringTokenizer.GetNext();
-		cout<<"originator: "<<strCommand<<endl;
-		strCommand = stringTokenizer.GetNext();
-		cout<<"org: "<<strCommand<<endl;
-		strCommand = stringTokenizer.GetNext();
-		cout<<"content: "<<strCommand<<endl;		
+		type = stringTokenizer.GetNext();
+		originator = stringTokenizer.GetNext();
+		orgs = stringTokenizer.GetNext();
+		content = stringTokenizer.GetNext();
 	
+		cout << "Client " << clntId << " received: " << szReceivedData << endl << flush;
 	}
 
 
@@ -334,12 +334,11 @@ communicate_prog_1(char *host)
 			} else if (cmd == "publish") {
 				int id;
 				ss >> id;
-				cout << "Client " << id << " called publish()" << endl;
 
 				char article[MAXSTRING];
 				ss >> article;
 
-				cout << "client sent article is: " << article << endl << flush;
+				cout << "Client " << id << " published: " << article << endl << flush;
 
 				result_1 = publish_1(article, clients[id].ip, clients[id].port, rpcClients[id]);
 				if (result_1 == (bool_t *) NULL) {

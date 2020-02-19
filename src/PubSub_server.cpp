@@ -38,6 +38,8 @@ vector<Client> clients;
 vector<int> sockets;
 vector<sockaddr_in> sockaddr;
 
+set<string> legalTypes = {"Sports", "Lifestyle", "Entertainment", "Business", "Technology", "Science", "Politics", "Health"};
+
 
 int seek_Client(string IP, int Port){
 	//string ip;
@@ -148,27 +150,44 @@ subscribe_1_svc(char *IP, int Port, char *Article,  struct svc_req *rqstp)
 	static bool_t  result;
 
 	CStringTokenizer token;
-	token.Split(Article, ";");
-	string s;
+	token.Split(Article, ";"); 
+	string type, originators, orgs, content;
+	type = token.GetNext();
+	originators = token.GetNext();
+	orgs = token.GetNext();
+	content = token.GetNext();
 
 	int id = seek_Client(IP,Port);
 	if (id != -1) {
-		s = token.GetNext();
-		if (s.size() > 0)  {
-			clients[id].sub_types.insert(s);
-			fprintf(stdout,"subscribe() %s successfully.\n", s.c_str());
+		if (content.size() > 0) {
+			fprintf(stdout,"Client %d subscribe() failed: The arcitle content is not empty.\n", id);
+			result = false;
+			return &result;
 		}
 
-		s = token.GetNext();
-		if (s.size() > 0) {
-			clients[id].sub_originators.insert(s);
-			fprintf(stdout,"subscribe() %s successfully.\n", s.c_str());
+		if (type.size() == 0 && originators.size() == 0 && orgs.size() == 0) {
+			fprintf(stdout,"Client %d subscribe() failed: The first three fields are empty.\n", id);
+			result = false;
+			return &result;
 		}
 
-		s = token.GetNext();
-		if (s.size() > 0) {
-			clients[id].sub_orgs.insert(s);
-			fprintf(stdout,"subscribe() %s successfully.\n", s.c_str());
+		if (type.size() > 0)  {
+			if (legalTypes.find(type) != legalTypes.end()) {
+				clients[id].sub_types.insert(type);
+				fprintf(stdout,"Client %d subscribe() type %s successfully.\n", id, type.c_str());
+			} else {
+				fprintf(stdout,"Client %d subscribe() %s failed: Illegal type.\n", id, type.c_str());
+			}
+		}
+
+		if (originators.size() > 0) {
+			clients[id].sub_originators.insert(originators);
+			fprintf(stdout,"Client %d subscribe() originators %s successfully.\n", id, originators.c_str());
+		}
+
+		if (orgs.size() > 0) {
+			clients[id].sub_orgs.insert(orgs);
+			fprintf(stdout,"Client %d subscribe() orgs %s successfully.\n", id, orgs.c_str());
 		}
 
 		result = true;
@@ -229,6 +248,24 @@ publish_1_svc(char *Article, char *IP, int Port,  struct svc_req *rqstp)
 	string originators = token.GetNext();
 	string orgs = token.GetNext();
 	string content = token.GetNext();
+
+	if ((type.size() > 0) && (legalTypes.find(type) == legalTypes.end())) {
+		cout << "Publish failed: The type " << type << " is illegal!" << endl << flush;
+		result = false;
+		return &result;
+	}
+
+	if (type.size() == 0 && originators.size() == 0 && orgs.size() == 0) {
+		cout << "Publish failed: There first three fields are empty" << endl << flush;
+		result = false;
+		return &result;
+	}
+
+	if (content.size() == 0) {
+		cout << "Publish failed: Empty article content" << endl << flush;
+		result = false;
+		return &result;
+	}
 
 	vector< int > targetClinets;
 
