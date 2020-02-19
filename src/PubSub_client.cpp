@@ -244,13 +244,13 @@ main (int argc, char *argv[])
 	char ip_3[] = "127.0.0.3";
 	char ip_4[] = "127.0.0.4";
 	int port = 5105;
-	join_1(ip_1,port,clnt);
-	join_1(ip_1,port,clnt);
-	join_1(ip_2,port,clnt);
-	join_1(ip_3,port,clnt);
-	leave_1(ip_4,port,clnt);
-	join_1(ip_4,port,clnt);
-	leave_1(ip_1,port,clnt);
+	// join_1(ip_1,port,clnt);
+	// join_1(ip_1,port,clnt);
+	// join_1(ip_2,port,clnt);
+	// join_1(ip_3,port,clnt);
+	// leave_1(ip_4,port,clnt);
+	// join_1(ip_4,port,clnt);
+	// leave_1(ip_1,port,clnt);
 	communicate_prog_1 (host);
 exit (0);
 }

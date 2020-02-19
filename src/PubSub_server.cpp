@@ -40,7 +40,7 @@ bool_t *
 join_1_svc(char *IP, int Port,  struct svc_req *rqstp)
 {
 	static bool_t  result;
-
+	
 	if(clients.size()>=MAXCLIENT){
 		fprintf(stderr,"Cannot add more clients!\n");
 		result = 1;
@@ -186,7 +186,7 @@ publish_1_svc(char *Article, char *IP, int Port,  struct svc_req *rqstp)
 	struct sockaddr_in serv_addr, client_addr;
 
 	for (auto it = targetClinets.begin(); it != targetClinets.end(); ++it) {
-		// sendto(*it, Article, strlen(Article), 0, (struct sockaddr *)&serv_addr, sizeof(serv_addr));
+		sendto(sockets[*it], Article, strlen(Article), 0, (struct sockaddr *)&sockaddr[*it], sizeof(serv_addr));
 	}
 
 	return &result;
@@ -204,6 +204,3 @@ ping_1_svc(struct svc_req *rqstp)
 	result = 1;
 	return &result;
 }
-
-int register
-
