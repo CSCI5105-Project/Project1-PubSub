@@ -8,6 +8,7 @@
 #include "client.h"
 #include "stringTokenizer.h"
 #include <stdio.h>
+#include <cstring>
 #include <vector>
 #include <arpa/inet.h>
 #include <algorithm>
@@ -16,10 +17,12 @@
 using namespace std;
 
 vector<Client> clients;
+vector<int> sockets;
 
-vector<Client>::iterator seek_Client(char *IP, int Port){
-	int ip;
-	inet_pton(AF_INET,IP,&ip);
+
+vector<Client>::iterator seek_Client(string IP, int Port){
+	string ip;
+	inet_pton(AF_INET, IP.c_str(), &ip);
 	auto it = clients.begin();
 	for (; it != clients.end(); ++it) {
 		if (it->ip == ip && it->port == Port) {
@@ -79,15 +82,15 @@ subscribe_1_svc(char *IP, int Port, char *Article,  struct svc_req *rqstp)
 	auto it = seek_Client(IP,Port);
 	if (it != clients.end()) {
 		s = token.GetNext();
-		if (s.size() > 0) it->sub_types.push_back(s);
+		if (s.size() > 0) it->sub_types.insert(s);
 		fprintf(stdout,"subscribe() %s successfully.\n", s.c_str());
 
 		s = token.GetNext();
-		if (s.size() > 0) it->sub_originators.push_back(s);
+		if (s.size() > 0) it->sub_originators.insert(s);
 		fprintf(stdout,"subscribe() %s successfully.\n", s.c_str());
 
 		s = token.GetNext();
-		if (s.size() > 0) it->sub_orgs.push_back(s);
+		if (s.size() > 0) it->sub_orgs.insert(s);
 		fprintf(stdout,"subscribe() %s successfully.\n", s.c_str());
 
 		result = true;
@@ -112,37 +115,12 @@ unsubscribe_1_svc(char *IP, int Port, char *Article,  struct svc_req *rqstp)
 		Client &c = *it;
 
 		s = token.GetNext();
-		if (s.size() > 0) {
-			for (auto it2 = c.sub_types.begin(); it2 != c.sub_types.end(); ++it2) {
-				if (*it2 == s) {
-					c.sub_types.erase(it2);
-					fprintf(stdout,"unsubscribe() %s successfully.\n", s.c_str());
-					break;
-				}
-			}
-		}
+		c.sub_types.erase(s);
+		fprintf(stdout,"unsubscribe() %s successfully.\n", s.c_str());
 
 		s = token.GetNext();
-		if (s.size() > 0) {
-			for (auto it2 = c.sub_originators.begin(); it2 != c.sub_originators.end(); ++it2) {
-				if (*it2 == s) {
-					c.sub_originators.erase(it2);
-					fprintf(stdout,"unsubscribe() %s successfully.\n", s.c_str());
-					break;
-				}
-			}
-		}
-
-		s = token.GetNext();
-		if (s.size() > 0) {
-			for (auto it2 = c.sub_orgs.begin(); it2 != c.sub_orgs.end(); ++it2) {
-				if (*it2 == s) {
-					c.sub_orgs.erase(it2);
-					fprintf(stdout,"unsubscribe() %s successfully.\n", s.c_str());
-					break;
-				}
-			}
-		}
+		c.sub_originators.erase(s);
+		fprintf(stdout,"unsubscribe() %s successfully.\n", s.c_str());
 	} else {
 		fprintf(stdout, "unsubscribe() failed: cannot find Client (%s, %d)\n", IP, Port);
 		result = false;	
@@ -156,9 +134,35 @@ publish_1_svc(char *Article, char *IP, int Port,  struct svc_req *rqstp)
 {
 	static bool_t  result;
 
-	/*
-	 * insert server code here
-	 */
+	CStringTokenizer token;
+	token.Split(Article, ";");
+
+	string type = token.GetNext();
+	string originators = token.GetNext();
+	string orgs = token.GetNext();
+	string content = token.GetNext();
+
+	vector< int > targetClinets;
+
+	int i = 0;
+	for (auto it = clients.begin(); it != clients.end(); ++it, ++i) {
+		bool isTargetClinet = false;
+		isTargetClinet |= it->sub_types.find(type) != it->sub_types.end();
+		isTargetClinet |= it->sub_originators.find(type) != it->sub_originators.end();
+		isTargetClinet |= it->sub_orgs.find(type) != it->sub_orgs.end();
+		if (isTargetClinet) targetClinets.push_back(i);
+	}
+
+	int sockfd;
+	if (sockfd = socket(AF_INET, SOCK_DGRAM, 0) < 0) {
+		perror("cannot create socket");
+		return 0;
+	}
+	struct sockaddr_in serv_addr, client_addr;
+
+	for (auto it = targetClinets.begin(); it != targetClinets.end(); ++it) {
+		// sendto(*it, Article, strlen(Article), 0, (struct sockaddr *)&serv_addr, sizeof(serv_addr));
+	}
 
 	return &result;
 }

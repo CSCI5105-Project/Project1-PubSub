@@ -1,16 +1,16 @@
 #include <stdio.h>
-#include <vector>
+#include <set>
 #include <string>
 
 using namespace std;
 
 class Client{
     public:
-    int ip;
+    string ip;
     int port;
 
-    vector<string> sub_types;
-    vector<string> sub_originators;
-    vector<string> sub_orgs;
+    set<string> sub_types;
+    set<string> sub_originators;
+    set<string> sub_orgs;
     Client(char *ip, int port);
 };
