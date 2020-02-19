@@ -12,10 +12,13 @@
 #include <arpa/inet.h>
 #include <algorithm>
 #include <iostream>
+#include <netdb.h>
 
 using namespace std;
 
 vector<Client> clients;
+vector<int> sockets;
+vector<sockaddr_in> sockaddr;
 
 vector<Client>::iterator seek_Client(char *IP, int Port){
 	int ip;
@@ -45,9 +48,30 @@ join_1_svc(char *IP, int Port,  struct svc_req *rqstp)
 	else{
 		Client c(IP,Port);
 		clients.push_back(c);
+		int sock;
+		if((sock = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
+			perror("cannot create socket");
+			result = 1;
+		}
+		else{
+			sockets.push_back(sock);			
+			struct hostent *ht;
+			struct sockaddr_in addr;
+			ht = gethostbyname(IP);
+			if(!ht){
+				fprintf(stderr, "could not obtain address of %s\n", IP);
+				result = 1;
+			}
+			else{
+				bzero(&addr,sizeof(addr));
+				addr.sin_family = AF_INET;
+				addr.sin_port = htons(Port);
+				memcpy((void *)&addr.sin_addr,ht->h_addr_list[0],ht->h_length);
+				sockaddr.push_back(addr);
+			}
+		}
 		fprintf(stdout,"Client (%s,%d) Join successfully!!\n",IP,Port);
-	}
-	
+	}	
 	return &result;
 }
 
@@ -175,3 +199,5 @@ ping_1_svc(struct svc_req *rqstp)
 	result = 1;
 	return &result;
 }
+
+

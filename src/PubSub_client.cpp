@@ -37,7 +37,7 @@ vector<ClientAddress> clients;
 
 char* getIP()
 {
- 	char ip_address[15];
+ 	static char ip_address[15];
     int fd;
     struct ifreq ifr;
      
@@ -76,11 +76,11 @@ int GetList(char *ip, int port){
 	return 0;
 	}
 	//set server's addr and port
-		reg_server_ht = gethostbyname(register_server_name);
-		if (!reg_server_ht) {
-					fprintf(stderr, "could not obtain address of %s\n", register_server_name);
-					return 0;
-		}
+	reg_server_ht = gethostbyname(register_server_name);
+	if (!reg_server_ht) {
+	fprintf(stderr, "could not obtain address of %s\n", register_server_name);
+		return 0;
+	}
 	bzero(&reg_server_addr, sizeof(reg_server_addr)); 
 	reg_server_addr.sin_family = AF_INET;
 	reg_server_addr.sin_port = htons(register_server_port);
