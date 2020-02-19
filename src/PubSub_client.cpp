@@ -57,7 +57,7 @@ vector<pthread_t> threads;
 void* listen(void* id){
         //int count = 0;
         //while (count<=10){count++;cout<<"1"<<endl;}
-    	
+    cout << "gui dong xi" <<*(int *)id<< endl << flush;	
 	int listenfd = 0;
 	int nState = 0;
 	int nReceivedBytes = 0;
@@ -108,7 +108,6 @@ void* listen(void* id){
 
 	while(1){
 		nReceivedBytes = recvfrom(listenfd, szReceivedData, 128, 0, (struct sockaddr *)&client_addr, &nClientAddr);
-
 		if(nReceivedBytes == -1)
 		{
 			perror("recvFrom failed");
@@ -117,7 +116,7 @@ void* listen(void* id){
 
 		szReceivedData[nReceivedBytes] = '\0';
 
-		//cout << "Received Message : " << szReceivedData << endl;
+		cout << "Received Message : " << szReceivedData << endl;
 	
 		//Tokenizer
 	    stringTokenizer.Split(szReceivedData, ";");
@@ -126,11 +125,11 @@ void* listen(void* id){
 		strCommand = stringTokenizer.GetNext();
 		cout<<"type: "<<strCommand<<endl;
 		strCommand = stringTokenizer.GetNext();
-                cout<<"originator: "<<strCommand<<endl;
+		cout<<"originator: "<<strCommand<<endl;
 		strCommand = stringTokenizer.GetNext();
-                cout<<"org: "<<strCommand<<endl;
+		cout<<"org: "<<strCommand<<endl;
 		strCommand = stringTokenizer.GetNext();
-                cout<<"content: "<<strCommand<<endl;		
+		cout<<"content: "<<strCommand<<endl;		
 	
 	}
 
@@ -337,10 +336,10 @@ communicate_prog_1(char *host)
 				ss >> id;
 				cout << "Client " << id << " called publish()" << endl;
 
-				string s;
 				char article[MAXSTRING];
 				ss >> article;
-				strcpy(article, s.c_str());
+
+				cout << "client sent article is: " << article << endl << flush;
 
 				result_1 = publish_1(article, clients[id].ip, clients[id].port, rpcClients[id]);
 				if (result_1 == (bool_t *) NULL) {

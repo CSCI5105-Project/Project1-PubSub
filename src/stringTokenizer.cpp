@@ -41,8 +41,8 @@ void CStringTokenizer::Split(const string strInput, const string strDelimiter)
 {
 	//Empty Previous tokens.
 	m_tokenList.clear();
-	string::size_type lastPos = strInput.find_first_not_of(strDelimiter, 0); //Find the not seperator
-	string::size_type pos = strInput.find_first_of(strDelimiter, lastPos); //Find the seperator
+	string::size_type pos = strInput.find_first_of(strDelimiter, 0); //Find the seperator
+	string::size_type lastPos = 0; //Find the not seperator
 
 	string strToken;
 
@@ -51,8 +51,14 @@ void CStringTokenizer::Split(const string strInput, const string strDelimiter)
 		strToken = strInput.substr(lastPos, pos-lastPos);
 
 		m_tokenList.push_back(strToken);
-		lastPos = strInput.find_first_not_of(strDelimiter, pos); //Find again
-		pos = strInput.find_first_of(strDelimiter, lastPos); //Find again
+
+        if ((pos != string::npos) && (strInput[pos+1] == strDelimiter[0])) {
+            lastPos = ++pos;
+        } else {
+            lastPos = strInput.find_first_not_of(strDelimiter, pos); //Find again
+            pos = strInput.find_first_of(strDelimiter, lastPos); //Find again
+        }
+		// cout << lastPos << " " << pos << endl << flush;
 	}
 
 	m_index = m_tokenList.begin();

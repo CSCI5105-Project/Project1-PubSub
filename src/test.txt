@@ -1,7 +1,11 @@
 create
-join 0
-subscribe 0 aaaa;aa;;
-publish id aaaa;aaa;;aaa
-unsubscribe 0 b;aa;;;
+join 0  
+subscribe 0 a;b;c;
+publish 0 a;;c;d
+publish 0 ;b;c;d
+publish 0 ;;c;d
+publish 0 a;;;d
+publish 0 ;b;;d
+#unsubscribe 0 b;aa;;;
 leave 0
 # comment should be omitted
