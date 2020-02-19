@@ -22,10 +22,12 @@
 #include <netinet/in.h>
 #include <net/if.h>
 #include <arpa/inet.h>
+#include <netdb.h>
 
 
 using namespace std;
-
+//static const int register_server_port = 5105;
+static const char *register_server_name = "127.0.0.1";
 struct ClientAddress {
 	char ip[15];
 	int port;
@@ -35,7 +37,7 @@ vector<ClientAddress> clients;
 
 char* getIP()
 {
- 	char ip_address[15];
+ 	static char ip_address[15];
     int fd;
     struct ifreq ifr;
      
@@ -60,6 +62,40 @@ char* getIP()
     strcpy(ip_address,inet_ntoa(((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr));
 
 	return ip_address;
+}
+
+int GetList(char *ip, int port){
+	int sock;
+	struct hostent *reg_server_ht;
+	struct sockaddr_in reg_server_addr;
+	char message[MAXSTRING];
+	char groupserver_list[1024];
+	//create socket
+	if ((sock = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
+	perror("cannot create socket");
+	return 0;
+	}
+	//set server's addr and port
+	reg_server_ht = gethostbyname(register_server_name);
+	if (!reg_server_ht) {
+	fprintf(stderr, "could not obtain address of %s\n", register_server_name);
+		return 0;
+	}
+	bzero(&reg_server_addr, sizeof(reg_server_addr)); 
+	reg_server_addr.sin_family = AF_INET;
+	reg_server_addr.sin_port = htons(port);
+	memcpy((void *)&reg_server_addr.sin_addr, reg_server_ht->h_addr_list[0], reg_server_ht->h_length);
+	//connect to server
+	if(connect(sock, (struct sockaddr *)&reg_server_addr, sizeof(reg_server_addr)) < 0){ 
+			perror("Error : Connect Failed"); 
+			return 0; 
+	} 
+	sprintf(message,"GetList;RPC;%s;%d",ip,port);
+	sendto(sock,message,sizeof(message),0,(struct sockaddr *)&reg_server_addr,sizeof(reg_server_addr));
+	recvfrom(sock,groupserver_list,sizeof(groupserver_list),0,NULL,NULL);
+	printf("%s\n",groupserver_list);
+	close(sock);
+	return 1;
 }
 
 void
@@ -114,6 +150,9 @@ communicate_prog_1(char *host)
 				strcpy(addr.ip, getIP());
 				addr.port = 6000 + clients.size();
 				clients.push_back(addr);
+				/*if(!GetList(addr.ip,addr.port)){
+					perror("GetList failed!\n");
+				}*/
 			} else if (cmd == "join") {
 				int id;
 				ss >> id;
