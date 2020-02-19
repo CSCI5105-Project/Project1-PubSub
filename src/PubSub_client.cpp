@@ -26,7 +26,7 @@
 
 
 using namespace std;
-static const int register_server_port = 5105;
+//static const int register_server_port = 5105;
 static const char *register_server_name = "127.0.0.1";
 struct ClientAddress {
 	char ip[15];
@@ -83,7 +83,7 @@ int GetList(char *ip, int port){
 	}
 	bzero(&reg_server_addr, sizeof(reg_server_addr)); 
 	reg_server_addr.sin_family = AF_INET;
-	reg_server_addr.sin_port = htons(register_server_port);
+	reg_server_addr.sin_port = htons(port);
 	memcpy((void *)&reg_server_addr.sin_addr, reg_server_ht->h_addr_list[0], reg_server_ht->h_length);
 	//connect to server
 	if(connect(sock, (struct sockaddr *)&reg_server_addr, sizeof(reg_server_addr)) < 0){ 

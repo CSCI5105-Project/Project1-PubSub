@@ -16,6 +16,8 @@
 
 using namespace std;
 
+static const int reg_port = 5105;
+
 vector<Client> clients;
 vector<int> sockets;
 vector<sockaddr_in> sockaddr;
@@ -200,4 +202,5 @@ ping_1_svc(struct svc_req *rqstp)
 	return &result;
 }
 
+int register
 
