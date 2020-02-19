@@ -40,11 +40,11 @@ vector<sockaddr_in> sockaddr;
 
 
 int seek_Client(string IP, int Port){
-	string ip;
+	//string ip;
 	//inet_pton(AF_INET, IP.c_str(), &ip);
 	//cout<<clients.size()<<endl<<flush;
 	for (int i = 0; i < clients.size(); ++i) {
-		if (clients[i].ip == ip && clients[i].port == Port) {
+		if (clients[i].ip == IP && clients[i].port == Port) {
 			return i;
 		}
 	}
@@ -121,6 +121,7 @@ join_1_svc(char *IP, int Port,  struct svc_req *rqstp)
 		}
 		fprintf(stdout,"Client (%s,%d) Join successfully!!\n",IP,Port);
 		result = 1;
+		cout<<"clients[0] = "<<clients[0].ip<<endl<<flush;
 	}	
 	return &result;
 }

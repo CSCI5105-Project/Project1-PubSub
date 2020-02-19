@@ -275,8 +275,8 @@ communicate_prog_1(char *host)
 				char tmp_str[20];
 				strcpy(tmp_str, ip.c_str());
 				
-				// CLIENT *clnt = clnt_create (tmp_str, COMMUNICATE_PROG, COMMUNICATE_VERSION, "udp");
-				CLIENT *clnt = clnt_create (localhost, COMMUNICATE_PROG, COMMUNICATE_VERSION, "udp");
+				CLIENT *clnt = clnt_create (tmp_str, COMMUNICATE_PROG, COMMUNICATE_VERSION, "udp");
+				//CLIENT *clnt = clnt_create (localhost, COMMUNICATE_PROG, COMMUNICATE_VERSION, "udp");
 			
 				if (clnt == NULL) {
 					clnt_pcreateerror (host);
