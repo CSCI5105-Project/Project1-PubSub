@@ -37,12 +37,14 @@ typedef enum {UNKNOWN_COMMAND=0, REGISTER, DEREGISTER, GETLIST} COMMAND_TYPE;
 
 
 using namespace std;
-//static const int register_server_port = 5105;
+static const int register_server_port = 5105;
 static const char *register_server_name = "127.0.0.1";
 struct ClientAddress {
 	char ip[15];
 	int port;
 };
+
+char localhost[] = "127.0.0.1";
 
 vector<ClientAddress> clients;
 
@@ -185,7 +187,7 @@ int GetList(char *ip, int port){
 	}
 	bzero(&reg_server_addr, sizeof(reg_server_addr)); 
 	reg_server_addr.sin_family = AF_INET;
-	reg_server_addr.sin_port = htons(port);
+	reg_server_addr.sin_port = htons(register_server_port);
 	memcpy((void *)&reg_server_addr.sin_addr, reg_server_ht->h_addr_list[0], reg_server_ht->h_length);
 	//connect to server
 	if(connect(sock, (struct sockaddr *)&reg_server_addr, sizeof(reg_server_addr)) < 0){ 
@@ -194,7 +196,8 @@ int GetList(char *ip, int port){
 	} 
 	sprintf(message,"GetList;RPC;%s;%d",ip,port);
 	sendto(sock,message,sizeof(message),0,(struct sockaddr *)&reg_server_addr,sizeof(reg_server_addr));
-	recvfrom(sock,tmp_list,sizeof(groupserver_list),0,NULL,NULL);
+	int cnt = recvfrom(sock,tmp_list,sizeof(tmp_list),0,NULL,NULL);
+	tmp_list[cnt-1] = '\0';
 	groupserver_list = tmp_list;
 	
 	CStringTokenizer token;
@@ -271,8 +274,10 @@ communicate_prog_1(char *host)
 				string ip = serverList[randNum];
 				char tmp_str[20];
 				strcpy(tmp_str, ip.c_str());
-
-				CLIENT *clnt = clnt_create (tmp_str, COMMUNICATE_PROG, COMMUNICATE_VERSION, "udp");
+				
+				// CLIENT *clnt = clnt_create (tmp_str, COMMUNICATE_PROG, COMMUNICATE_VERSION, "udp");
+				CLIENT *clnt = clnt_create (localhost, COMMUNICATE_PROG, COMMUNICATE_VERSION, "udp");
+			
 				if (clnt == NULL) {
 					clnt_pcreateerror (host);
 					exit (1);
@@ -284,8 +289,6 @@ communicate_prog_1(char *host)
 				pthread_create(&listenThread, NULL, listen, (void *)&id);
 				//struct ClientAddress *args = (struct ClientAddress *)args;
 				threads.push_back(listenThread);
-				
-
 					
 			} else if (cmd == "join") {
 				int id;

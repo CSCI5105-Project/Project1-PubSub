@@ -15,7 +15,7 @@ extern "C" {
 
 #define MAXCLIENT 100
 
-
+int Register();
 struct join_1_argument {
 	char *IP;
 	int Port;

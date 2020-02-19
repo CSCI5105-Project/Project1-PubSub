@@ -4,6 +4,9 @@
  */
 
 #include "PubSub.h"
+#include "client.h"
+#include "stringTokenizer.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <rpc/pmap_clnt.h>
@@ -13,11 +16,28 @@
 #include <netinet/in.h>
 #include <unistd.h>
  
+#include <sys/ioctl.h>
+#include <netinet/in.h>
+#include <net/if.h>
+#include <arpa/inet.h>
+
+
+#include <cstring>
+#include <iostream>
+#include <fstream>
+#include <sstream>
+
+#include <vector>
+ 
+#include <unistd.h>
+#include <string.h>
+
 #include <sys/socket.h>
 #include <sys/ioctl.h>
 #include <netinet/in.h>
 #include <net/if.h>
 #include <arpa/inet.h>
+#include <netdb.h>
 
 #ifndef SIG_PF
 #define SIG_PF void(*)(int)
@@ -162,6 +182,68 @@ communicate_prog_1(struct svc_req *rqstp, register SVCXPRT *transp)
 
 // 	return ip_address;
 // }
+static const int reg_port = 5105;
+static const int groupserver_port = 5107;
+static const char *register_server_name = "127.0.0.1";
+
+char* getIP()
+{
+ 	static char ip_address[15];
+    int fd;
+    struct ifreq ifr;
+     
+    /*AF_INET - to define network interface IPv4*/
+    /*Creating soket for it.*/
+    fd = socket(AF_INET, SOCK_DGRAM, 0);
+     
+    /*AF_INET - to define IPv4 Address type.*/
+    ifr.ifr_addr.sa_family = AF_INET;
+     
+    /*eth0 - define the ifr_name - port name
+    where network attached.*/
+    memcpy(ifr.ifr_name, "eno1", IFNAMSIZ-1);
+     
+    /*Accessing network interface information by
+    passing address using ioctl.*/
+    ioctl(fd, SIOCGIFADDR, &ifr);
+    /*closing fd*/
+    close(fd);
+     
+    /*Extract IP Address*/
+    strcpy(ip_address,inet_ntoa(((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr));
+
+	return ip_address;
+}
+
+int Register(){
+	int sock;
+	struct hostent *reg_server_ht;
+	struct sockaddr_in reg_server_addr;
+	char message[MAXSTRING];
+	if((sock = socket(AF_INET,SOCK_DGRAM,0))<0){
+		perror("cannot create socket!\n");
+		return 0;
+	}
+	reg_server_ht = gethostbyname(register_server_name);
+	if (!reg_server_ht) {
+	fprintf(stderr, "could not obtain address of %s\n", register_server_name);
+		return 0;
+	}
+	bzero(&reg_server_addr, sizeof(reg_server_addr)); 
+	reg_server_addr.sin_family = AF_INET;
+	reg_server_addr.sin_port = htons(reg_port);
+	memcpy((void *)&reg_server_addr.sin_addr, reg_server_ht->h_addr_list[0], reg_server_ht->h_length);
+	//connect to server
+	if(connect(sock, (struct sockaddr *)&reg_server_addr, sizeof(reg_server_addr)) < 0){ 
+			perror("Error : Connect Failed"); 
+			return 0; 
+	} 
+	sprintf(message,"Register;RPC;%s;%d;0;0",getIP(),groupserver_port);
+	sendto(sock,message,sizeof(message),0,(struct sockaddr *)&reg_server_addr,sizeof(reg_server_addr));
+	// close(sock);
+	return 1;
+}
+
 
 int
 main (int argc, char **argv)
@@ -191,7 +273,9 @@ main (int argc, char **argv)
 	}
 
 	
-
+	if(!Register()){
+		perror("can't register!\n");
+	}
 	svc_run ();
 	fprintf (stderr, "%s", "svc_run returned");
 	exit (1);

@@ -113,7 +113,7 @@ string getServerList(RPC_FORMAT rpc_format)
 		//Remove last ;
 		strServerList.erase(strServerList.length()-1,1);
 	}
-
+	cout << "strServerList is " << strServerList << endl << flush;
 	return strServerList;
 }
 
@@ -465,7 +465,7 @@ int main(int argc, char *argv[])
 	
 	//Listener starts. 
 	pthread_create(&listenThread, NULL, listen, NULL);
-	pthread_create(&heartBeatThread, NULL, heartBeat, NULL);
+	// pthread_create(&heartBeatThread, NULL, heartBeat, NULL);
 
 	cout << "Super-server starts." << endl;
 
@@ -488,7 +488,7 @@ int main(int argc, char *argv[])
 	}
 
 	int nRes = pthread_join(listenThread, NULL);
-	nRes = pthread_join(heartBeatThread, NULL);
+	// nRes = pthread_join(heartBeatThread, NULL);
 
 	return 0;
 }
