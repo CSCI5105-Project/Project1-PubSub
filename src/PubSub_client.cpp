@@ -313,10 +313,8 @@ communicate_prog_1(char *host)
 				ss >> id;
 				cout << "Client " << id << " called subscribe()" << endl;
 
-				string s;
 				char article[MAXSTRING];
 				ss >> article;
-				strcpy(article, s.c_str());
 
 				result_1 = subscribe_1(clients[id].ip, clients[id].port, article, rpcClients[id]);
 				if (result_1 == (bool_t *) NULL) {
@@ -327,10 +325,8 @@ communicate_prog_1(char *host)
 				ss >> id;
 				cout << "Client " << id << " called unsubscribe()" << endl;
 
-				string s;
 				char article[MAXSTRING];
 				ss >> article;
-				strcpy(article, s.c_str());
 
 				result_1 = unsubscribe_1(clients[id].ip, clients[id].port, article, rpcClients[id]);
 				if (result_1 == (bool_t *) NULL) {

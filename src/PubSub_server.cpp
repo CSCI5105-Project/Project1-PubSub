@@ -39,16 +39,16 @@ vector<int> sockets;
 vector<sockaddr_in> sockaddr;
 
 
-vector<Client>::iterator seek_Client(string IP, int Port){
+int seek_Client(string IP, int Port){
 	string ip;
-	inet_pton(AF_INET, IP.c_str(), &ip);
-	auto it = clients.begin();
-	for (; it != clients.end(); ++it) {
-		if (it->ip == ip && it->port == Port) {
-			return it;
+	//inet_pton(AF_INET, IP.c_str(), &ip);
+	//cout<<clients.size()<<endl<<flush;
+	for (int i = 0; i < clients.size(); ++i) {
+		if (clients[i].ip == ip && clients[i].port == Port) {
+			return i;
 		}
 	}
-	return it;
+	return -1;
 }
 
 // char* getIP()
@@ -83,14 +83,13 @@ vector<Client>::iterator seek_Client(string IP, int Port){
 bool_t *
 join_1_svc(char *IP, int Port,  struct svc_req *rqstp)
 {
-	cout << "I love RPC" << endl << flush;
 	static bool_t  result;
 	
 	if(clients.size()>=MAXCLIENT){
 		fprintf(stderr,"Cannot add more clients!\n");
 		result = 0;
 	}
-	else if(seek_Client(IP,Port) != clients.end()){
+	else if(seek_Client(IP,Port) != -1){
 		fprintf(stderr,"Client (%s,%d) has already joined to the server!\n",IP,Port);
 		result = 0;
 	}
@@ -98,17 +97,16 @@ join_1_svc(char *IP, int Port,  struct svc_req *rqstp)
 		Client c(IP,Port);
 		clients.push_back(c);
 		int sock;
+
 		if((sock = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
 			perror("cannot create socket");
 			result = 0;
 		}
 		else{
-			cout << "I love RPC2" << endl << flush;
 			sockets.push_back(sock);			
 			struct hostent *ht;
 			struct sockaddr_in addr;
 			ht = gethostbyname(IP);
-			cout << "I love RPC3" << endl << flush;
 			if(!ht){
 				fprintf(stderr, "could not obtain address of %s\n", IP);
 				result = 0;
@@ -120,7 +118,6 @@ join_1_svc(char *IP, int Port,  struct svc_req *rqstp)
 				memcpy((void *)&addr.sin_addr,ht->h_addr_list[0],ht->h_length);
 				sockaddr.push_back(addr);
 			}
-			cout << "I love RPC4" << endl << flush;
 		}
 		fprintf(stdout,"Client (%s,%d) Join successfully!!\n",IP,Port);
 		result = 1;
@@ -132,9 +129,9 @@ bool_t *
 leave_1_svc(char *IP, int Port,  struct svc_req *rqstp)
 {
 	static bool_t  result;
-	auto it = seek_Client(IP,Port);
-	if(it != clients.end()){
-		clients.erase(it);
+	int id = seek_Client(IP,Port);
+	if(id != -1){
+		clients.erase(clients.begin() + id);
 		printf("Client (%s,%d) leaves group server successfully!!\n",IP,Port);
 	}
 	else{
@@ -153,19 +150,25 @@ subscribe_1_svc(char *IP, int Port, char *Article,  struct svc_req *rqstp)
 	token.Split(Article, ";");
 	string s;
 
-	auto it = seek_Client(IP,Port);
-	if (it != clients.end()) {
+	int id = seek_Client(IP,Port);
+	if (id != -1) {
 		s = token.GetNext();
-		if (s.size() > 0) it->sub_types.insert(s);
-		fprintf(stdout,"subscribe() %s successfully.\n", s.c_str());
+		if (s.size() > 0)  {
+			clients[id].sub_types.insert(s);
+			fprintf(stdout,"subscribe() %s successfully.\n", s.c_str());
+		}
 
 		s = token.GetNext();
-		if (s.size() > 0) it->sub_originators.insert(s);
-		fprintf(stdout,"subscribe() %s successfully.\n", s.c_str());
+		if (s.size() > 0) {
+			clients[id].sub_originators.insert(s);
+			fprintf(stdout,"subscribe() %s successfully.\n", s.c_str());
+		}
 
 		s = token.GetNext();
-		if (s.size() > 0) it->sub_orgs.insert(s);
-		fprintf(stdout,"subscribe() %s successfully.\n", s.c_str());
+		if (s.size() > 0) {
+			clients[id].sub_orgs.insert(s);
+			fprintf(stdout,"subscribe() %s successfully.\n", s.c_str());
+		}
 
 		result = true;
 	} else {
@@ -184,17 +187,27 @@ unsubscribe_1_svc(char *IP, int Port, char *Article,  struct svc_req *rqstp)
 	token.Split(Article, ";");
 	string s;
 
-	auto it = seek_Client(IP,Port);
-	if (it != clients.end()) {
-		Client &c = *it;
+	int id = seek_Client(IP,Port);
+	if (id != -1) {
+		Client &c = clients[id];
 
 		s = token.GetNext();
-		c.sub_types.erase(s);
-		fprintf(stdout,"unsubscribe() %s successfully.\n", s.c_str());
+		if (s.size() > 0) {
+			c.sub_types.erase(s);
+			fprintf(stdout,"unsubscribe() %s successfully.\n", s.c_str());
+		}
 
 		s = token.GetNext();
-		c.sub_originators.erase(s);
-		fprintf(stdout,"unsubscribe() %s successfully.\n", s.c_str());
+		if (s.size() > 0) {
+			c.sub_originators.erase(s);
+			fprintf(stdout,"unsubscribe() %s successfully.\n", s.c_str());
+		}
+
+		s = token.GetNext();
+		if (s.size() > 0) {
+			c.sub_originators.erase(s);
+			fprintf(stdout,"unsubscribe() %s successfully.\n", s.c_str());
+		}
 	} else {
 		fprintf(stdout, "unsubscribe() failed: cannot find Client (%s, %d)\n", IP, Port);
 		result = false;	
