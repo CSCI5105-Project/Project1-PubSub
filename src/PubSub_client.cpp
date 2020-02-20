@@ -16,15 +16,14 @@
 #include <utility>
 #include <thread>
 #include <chrono>
-
 #include <unistd.h>
 #include <string.h>
-
 #include <sys/socket.h>
 #include <sys/ioctl.h>
 #include <netinet/in.h>
 #include <net/if.h>
 #include <arpa/inet.h>
+#include <mutex>
 #include "stringTokenizer.h"
 
 #include <netdb.h>
@@ -33,8 +32,6 @@
 
 typedef enum {UNKNOWN_FORMAT=0, RPC, RMI} RPC_FORMAT;
 typedef enum {UNKNOWN_COMMAND=0, REGISTER, DEREGISTER, GETLIST} COMMAND_TYPE;
-
-
 
 using namespace std;
 static const int register_server_port = 5105;
@@ -53,6 +50,8 @@ vector<string> serverList;
 vector<CLIENT *> rpcClients;
 
 vector<pthread_t> threads;  
+
+mutex mtx_cout;
 
 void* listen(void* id){
         //int count = 0;
@@ -130,7 +129,9 @@ void* listen(void* id){
 		orgs = stringTokenizer.GetNext();
 		content = stringTokenizer.GetNext();
 	
+		mtx_cout.lock();
 		cout << "Client " << clntId << " received: " << szReceivedData << endl << flush;
+		mtx_cout.unlock();
 	}
 
 
@@ -274,8 +275,9 @@ communicate_prog_1(char *host)
 				char tmp_str[20];
 				strcpy(tmp_str, ip.c_str());
 				
+				//cout << "tmp_str is " << tmp_str << endl << flush;
 				CLIENT *clnt = clnt_create (tmp_str, COMMUNICATE_PROG, COMMUNICATE_VERSION, "udp");
-				//CLIENT *clnt = clnt_create (localhost, COMMUNICATE_PROG, COMMUNICATE_VERSION, "udp");
+				// CLIENT *clnt = clnt_create (localhost, COMMUNICATE_PROG, COMMUNICATE_VERSION, "udp");
 			
 				if (clnt == NULL) {
 					clnt_pcreateerror (host);
@@ -292,7 +294,9 @@ communicate_prog_1(char *host)
 			} else if (cmd == "join") {
 				int id;
 				ss >> id;
-				cout << "Client " << id << " called join()" << endl;
+				mtx_cout.lock();
+				cout << "Client " << id << " called join()" << endl << flush;
+				mtx_cout.unlock();
 
 				result_1 = join_1(clients[id].ip, clients[id].port, rpcClients[id]);
 				if (result_1 == (bool_t *) NULL) {
@@ -301,7 +305,9 @@ communicate_prog_1(char *host)
 			} else if (cmd == "leave") {
 				int id;
 				ss >> id;
-				cout << "Client " << id << " called leave()" << endl;
+				mtx_cout.lock();
+				cout << "Client " << id << " called leave()" << endl << flush;
+				mtx_cout.unlock();
 
 				result_1 = leave_1(clients[id].ip, clients[id].port, rpcClients[id]);
 				if (result_1 == (bool_t *) NULL) {
@@ -310,7 +316,9 @@ communicate_prog_1(char *host)
 			} else if (cmd == "subscribe") {
 				int id;
 				ss >> id;
-				cout << "Client " << id << " called subscribe()" << endl;
+				mtx_cout.lock();
+				cout << "Client " << id << " called subscribe()" << endl << flush;
+				mtx_cout.unlock();
 
 				char article[MAXSTRING];
 				ss >> article;
@@ -322,7 +330,9 @@ communicate_prog_1(char *host)
 			} else if (cmd == "unsubscribe") {
 				int id;
 				ss >> id;
-				cout << "Client " << id << " called unsubscribe()" << endl;
+				mtx_cout.lock();
+				cout << "Client " << id << " called unsubscribe()" << endl << flush;
+				mtx_cout.unlock();
 
 				char article[MAXSTRING];
 				ss >> article;
@@ -338,7 +348,9 @@ communicate_prog_1(char *host)
 				char article[MAXSTRING];
 				ss >> article;
 
+				mtx_cout.lock();
 				cout << "Client " << id << " published: " << article << endl << flush;
+				mtx_cout.unlock();
 
 				result_1 = publish_1(article, clients[id].ip, clients[id].port, rpcClients[id]);
 				if (result_1 == (bool_t *) NULL) {
@@ -356,7 +368,9 @@ communicate_prog_1(char *host)
 	        result_6 = ping_1(clnt);
         	if (result_6 == (bool_t *) NULL) {
 			flag = false;
+			mtx_cout.lock();
 			printf("I need to join another group.\n");
+			mtx_cout.unlock();
 			// join another group
        		}
 	}

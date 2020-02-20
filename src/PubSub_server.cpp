@@ -271,10 +271,21 @@ publish_1_svc(char *Article, char *IP, int Port,  struct svc_req *rqstp)
 
 	int i = 0;
 	for (auto it = clients.begin(); it != clients.end(); ++it, ++i) {
-		bool isTargetClinet = false;
-		isTargetClinet |= it->sub_types.find(type) != it->sub_types.end();
-		isTargetClinet |= it->sub_originators.find(originators) != it->sub_originators.end();
-		isTargetClinet |= it->sub_orgs.find(orgs) != it->sub_orgs.end();
+		if (it->sub_types.size() == 0 && it->sub_originators.size() == 0 && it->sub_orgs.size() == 0) {
+			continue;
+		}
+
+		bool isTargetClinet = true;
+		if (type.size() > 0) {
+			isTargetClinet &= it->sub_types.find(type) != it->sub_types.end();
+		}
+		if (originators.size() > 0) {
+			isTargetClinet &= it->sub_originators.find(originators) != it->sub_originators.end();
+		}
+		if (orgs.size() > 0) {
+			isTargetClinet &= it->sub_orgs.find(orgs) != it->sub_orgs.end();
+		}
+
 		if (isTargetClinet) targetClinets.push_back(i);
 	}
 

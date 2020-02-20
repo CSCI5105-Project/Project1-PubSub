@@ -201,7 +201,7 @@ void * heartBeat(void * pData)
 	timeval tv;
 	tv.tv_sec  = 2;
 	tv.tv_usec = 0;
-
+	//cout << "Heartbeat starts" << endl <<flush;
 	while(1)
 	{
 		for(it=g_serverList.begin();it!=g_serverList.end();it++)
@@ -219,7 +219,7 @@ void * heartBeat(void * pData)
 		    pHostent = gethostbyname(it->m_szIPAddress);
 
 			memcpy((char *)&serv_addr.sin_addr.s_addr, pHostent->h_addr_list[0], pHostent->h_length);
-
+			
 			// send
 			sendto(sockfd, strHeartBeat.c_str(), strHeartBeat.length(), 0, (struct sockaddr *)&serv_addr, sizeof(serv_addr));
 
@@ -229,7 +229,7 @@ void * heartBeat(void * pData)
 			recvLen = recvfrom(sockfd, szReceivedData, 32, 0, (struct sockaddr *)&serv_addr, &nClientAddr);
 			szReceivedData[recvLen] = '\0';	
 
-//			cout << "Heart bear message : " << szReceivedData << endl;
+			cout << "Heart beat message : " << szReceivedData << endl;
 
 			//Failed to get heartbeat then will be removed
 //			if(strHeartBeat.compare(szReceivedData) != 0)
@@ -465,7 +465,7 @@ int main(int argc, char *argv[])
 	
 	//Listener starts. 
 	pthread_create(&listenThread, NULL, listen, NULL);
-	// pthread_create(&heartBeatThread, NULL, heartBeat, NULL);
+	pthread_create(&heartBeatThread, NULL, heartBeat, NULL);
 
 	cout << "Super-server starts." << endl;
 
@@ -488,7 +488,7 @@ int main(int argc, char *argv[])
 	}
 
 	int nRes = pthread_join(listenThread, NULL);
-	// nRes = pthread_join(heartBeatThread, NULL);
+	nRes = pthread_join(heartBeatThread, NULL);
 
 	return 0;
 }

@@ -11,12 +11,8 @@ subscribe 0 ;;;
 
 # Legal subscribings
 subscribe 0 Sports;bingbing;umn;
-subscribe 0 Business;;hust;
-
 subscribe 1 Sports;haoyu;;
-subscribe 1 Entertainment;;sdu;
-
-subscribe 2 Science;haoyu;hkust;
+subscribe 2 Science;;hkust;
 
 # Illegal publishings
 publish 0 Illegal;;;IllegalTypeContent
@@ -25,14 +21,19 @@ publish 0 Business;;;
 publish 0 ;;;;
 
 # Legal publishings
-publish 0 Sports;;;SportsContent
-publish 0 ;bingbing;;bingbingContent
-publish 1 ;;umn;umnContent
-publish 1 Business;haoyu;;business-HaoyuContent
+publish 0 Sports;;;Sports-target01
+publish 0 ;bingbing;;bingbing-target0
+publish 1 ;;umn;umn-target0
+publish 1 Business;haoyu;;business-haoyu-targetNull
+publish 2 Sports;;umn;Sports-umn-target0
+publish 2 Sports;;umn2;Sports-umn2-targetNull
 
-#unsubscribe 0 b;aa;;;
+
+# test unsubscribe()
+unsubscribe 0 Sports
+publish 2 Sports;;;Sports-target1
 
 leave 0
 leave 1
 leave 2
-# comment should be omitted
+# comments should be omitted

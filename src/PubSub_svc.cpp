@@ -11,6 +11,8 @@
 #include <stdlib.h>
 #include <rpc/pmap_clnt.h>
 #include <string.h>
+#include <thread>
+#include <chrono>
 #include <memory.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -38,6 +40,8 @@
 #include <net/if.h>
 #include <arpa/inet.h>
 #include <netdb.h>
+#include <mutex>
+
 
 #ifndef SIG_PF
 #define SIG_PF void(*)(int)
@@ -182,7 +186,7 @@ communicate_prog_1(struct svc_req *rqstp, register SVCXPRT *transp)
 
 // 	return ip_address;
 // }
-static const int reg_port = 5105;
+int reg_port=5105;
 static const int groupserver_port = 5107;
 static const char *register_server_name = "127.0.0.1";
 
@@ -231,6 +235,8 @@ int Register(){
 	}
 	bzero(&reg_server_addr, sizeof(reg_server_addr)); 
 	reg_server_addr.sin_family = AF_INET;
+	srand(time(NULL));
+	//reg_port = 7000+rand()%1000;
 	reg_server_addr.sin_port = htons(reg_port);
 	memcpy((void *)&reg_server_addr.sin_addr, reg_server_ht->h_addr_list[0], reg_server_ht->h_length);
 	//connect to server
@@ -244,6 +250,68 @@ int Register(){
 	return 1;
 }
 
+void* listen(void* pData){
+	
+	int listenfd = 0;
+	int nState = 0;
+	int nReceivedBytes = 0;
+	socklen_t nClientAddr = 0;
+	char szReceivedData[129];
+	struct sockaddr_in serv_addr, client_addr;
+
+	string strCommand;
+	string strRPCFormat;
+	string strIPAddress;
+
+	// COMMAND_TYPE command_type = UNKNOWN_COMMAND;
+	// RPC_FORMAT rpc_format = UNKNOWN_FORMAT;
+	int nPort = 0;
+	
+	//RPC
+	uint32_t uiProgram = 0;
+	uint32_t uiVersion = 0;
+
+	string strReturn;
+
+	nClientAddr = sizeof(client_addr);
+	// socket create
+	listenfd = socket(AF_INET, SOCK_DGRAM, 0);
+
+	if(listenfd < 0)
+	{
+		perror("socket error : ");
+        return NULL;
+	}
+
+	serv_addr.sin_family = AF_INET;
+	serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+	serv_addr.sin_port = htons(groupserver_port);
+
+	nState = bind(listenfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr));
+
+	if (nState == -1)
+	{
+		perror("bind error : ");
+		return NULL;
+	}
+
+	while(1){
+
+		nReceivedBytes = recvfrom(listenfd, szReceivedData, 128, 0, (struct sockaddr *)&client_addr, &nClientAddr);
+		cout<<"revceived data: "<<szReceivedData<<endl<<flush;
+		if(nReceivedBytes == -1)
+		{
+			perror("recvFrom failed");
+			break;
+		}
+
+		szReceivedData[nReceivedBytes] = '\0';
+		// cout<<"received data: "<<szReceivedData<<endl<<flush;
+
+		sendto(listenfd, szReceivedData, strlen(szReceivedData),  0, (const struct sockaddr *) &client_addr, nClientAddr); 
+	}
+
+}
 
 int
 main (int argc, char **argv)
@@ -276,6 +344,11 @@ main (int argc, char **argv)
 	if(!Register()){
 		perror("can't register!\n");
 	}
+	
+	pthread_t listenThread;
+
+	pthread_create(&listenThread, NULL, listen, NULL);
+
 	svc_run ();
 	fprintf (stderr, "%s", "svc_run returned");
 	exit (1);
