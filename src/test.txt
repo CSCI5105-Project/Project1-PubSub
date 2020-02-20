@@ -33,7 +33,7 @@ publish 2 Sports;;umn2;Sports-umn2-targetNull
 unsubscribe 0 Sports
 publish 2 Sports;;;Sports-target1
 
-leave 0
+#leave 0
 leave 1
 leave 2
 # comments should be omitted

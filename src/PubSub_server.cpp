@@ -85,6 +85,7 @@ int seek_Client(string IP, int Port){
 bool_t *
 join_1_svc(char *IP, int Port,  struct svc_req *rqstp)
 {
+	cout << "join is called" << endl << flush;
 	static bool_t  result;
 	
 	if(clients.size()>=MAXCLIENT){

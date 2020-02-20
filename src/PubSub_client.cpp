@@ -25,6 +25,7 @@
 #include <arpa/inet.h>
 #include <mutex>
 #include "stringTokenizer.h"
+#include <time.h>
 
 #include <netdb.h>
     
@@ -44,6 +45,7 @@ struct ClientAddress {
 char localhost[] = "127.0.0.1";
 
 vector<ClientAddress> clients;
+vector<bool> isClntValid;
 
 vector<string> serverList; 
 
@@ -199,7 +201,7 @@ int GetList(char *ip, int port){
 	int cnt = recvfrom(sock,tmp_list,sizeof(tmp_list),0,NULL,NULL);
 	tmp_list[cnt-1] = '\0';
 	groupserver_list = tmp_list;
-	
+	serverList.clear();
 	CStringTokenizer token;
 	token.Split(groupserver_list, ";");
 	for (int i = 0; i < token.GetSize(); i+=2){
@@ -266,6 +268,7 @@ communicate_prog_1(char *host)
 				strcpy(addr.ip, getIP());
 				addr.port = 6000 + clients.size();
 				clients.push_back(addr);
+				isClntValid.push_back(true);
 				if(!GetList(addr.ip,addr.port)){
 					perror("GetList failed!\n");
 				}
@@ -310,6 +313,7 @@ communicate_prog_1(char *host)
 				mtx_cout.unlock();
 
 				result_1 = leave_1(clients[id].ip, clients[id].port, rpcClients[id]);
+				isClntValid[id] = false;
 				if (result_1 == (bool_t *) NULL) {
 					clnt_perror (clnt, "call leave() failed");
 				}
@@ -363,16 +367,62 @@ communicate_prog_1(char *host)
 		myfile.close();
 	}
 
-	while (flag){
+	while (true){
 		sleep(1);
-	        result_6 = ping_1(clnt);
-        	if (result_6 == (bool_t *) NULL) {
-			flag = false;
-			mtx_cout.lock();
-			printf("I need to join another group.\n");
-			mtx_cout.unlock();
-			// join another group
-       		}
+		for (int i = 0; i < clients.size(); ++i) {
+			if (!isClntValid[i]) continue;
+
+			result_6 = ping_1(rpcClients[i]);
+			if (result_6 == (bool_t *) NULL) {
+				mtx_cout.lock();
+				printf("Client %d need to join another group.\n", i);
+				mtx_cout.unlock();
+				// join another group
+				sleep(6);
+				int count = 0;
+				bool success = false;
+				while (count < 10) {
+					ClientAddress addr;
+					strcpy(addr.ip, getIP());
+					addr.port = 6000 + i;
+					if(!GetList(addr.ip,addr.port)){
+						perror("GetList failed!\n");
+						return;
+					}
+					if (serverList.size() > 0) {
+						bool_t *res;
+						cout << 111 << endl << flush;
+						int randNum = rand()%serverList.size();
+						string ip = serverList[randNum];
+						char tmp_str[20];
+						cout << 222 << endl << flush;
+						strcpy(tmp_str, ip.c_str());
+						CLIENT *clnt = clnt_create (tmp_str, COMMUNICATE_PROG, COMMUNICATE_VERSION, "udp");
+						res = join_1(clients[i].ip, clients[i].port, clnt);
+						rpcClients[i] = clnt;
+						cout << 333 << endl << flush;
+						if (res == (bool_t *) NULL) {
+							clnt_perror (clnt, "call join() failed");
+						}
+						mtx_cout.lock();
+						cout << "Client " << i << " has re-joined to a group server" << endl << flush;
+						mtx_cout.unlock();
+						success = true;
+						break;
+					}
+					count++;
+					sleep(1);
+				}
+				if (!success) {
+					mtx_cout.lock();
+					cout << "Timeout: " <<  "Client " << i << " cannot connect to a group server" << endl << flush;
+					mtx_cout.unlock();
+					return;
+				}
+			}
+		}
+		
+
 	}
 
 #ifndef	DEBUG
